@@ -1,0 +1,312 @@
+# =====================================================================
+# Barbería -> Red Hat OpenShift
+# Stack: MySQL 8  +  FastAPI (backend/)  +  React + Nginx (frontend/)
+# Repo : https://github.com/julian2lidels/proyecto-barberia.git
+#
+# Uso:   oc apply -f openshift/barberia-openshift.yaml
+#   o en la consola web: perspectiva Developer -> boton (+) "Import YAML"
+#
+# ANTES de aplicar cambia las claves de los dos Secret (mysql-secret y app-secret).
+# Si tu rama no se llama "main", cambia "ref" en los dos BuildConfig.
+# No lleva namespace: se crea en el proyecto en el que estes parado.
+# El backend crea las tablas y los datos iniciales solo, al arrancar.
+# =====================================================================
+
+# ---------------------------- Credenciales ----------------------------
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secret
+  labels: {app: barberia}
+type: Opaque
+stringData:
+  MYSQL_USER: barberuser
+  MYSQL_PASSWORD: CambiaEstaClaveDeBD123
+  MYSQL_DATABASE: barberia
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secret
+  labels: {app: barberia}
+type: Opaque
+stringData:
+  SECRET_KEY: cambia-esta-clave-larga-y-aleatoria-1234567890
+  ADMIN_USER: admin
+  ADMIN_PASSWORD: CambiaEstaClaveAdmin123
+---
+# ------------------------------- MySQL --------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-data
+  labels: {app: barberia}
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  labels: {app: barberia, component: mysql}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels: {app: barberia, component: mysql}
+  template:
+    metadata:
+      labels: {app: barberia, component: mysql}
+    spec:
+      containers:
+        - name: mysql
+          image: registry.access.redhat.com/rhel9/mysql-80:latest
+          ports:
+            - containerPort: 3306
+              name: mysql
+          envFrom:
+            - secretRef:
+                name: mysql-secret
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - MYSQL_PWD="$MYSQL_PASSWORD" mysql -h 127.0.0.1 -u "$MYSQL_USER" -D "$MYSQL_DATABASE" -e 'SELECT 1'
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            tcpSocket:
+              port: 3306
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql/data
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: mysql-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  labels: {app: barberia, component: mysql}
+spec:
+  selector: {app: barberia, component: mysql}
+  ports:
+    - name: mysql
+      port: 3306
+      targetPort: 3306
+---
+# ------------------------------ Backend -------------------------------
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: backend
+  labels: {app: barberia, component: backend}
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: backend
+  labels: {app: barberia, component: backend}
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/julian2lidels/proyecto-barberia.git
+      ref: main
+    contextDir: backend
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: backend:latest
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels: {app: barberia, component: backend}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"backend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"backend\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: barberia, component: backend}
+  template:
+    metadata:
+      labels: {app: barberia, component: backend}
+    spec:
+      containers:
+        - name: backend
+          image: backend:latest
+          ports:
+            - containerPort: 8080
+              name: 8080-tcp
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_USER}
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_PASSWORD}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_DATABASE}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: SECRET_KEY}
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: ADMIN_USER}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: ADMIN_PASSWORD}
+          # El backend espera a MySQL antes de arrancar: damos hasta ~3 min
+          startupProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels: {app: barberia, component: backend}
+spec:
+  selector: {app: barberia, component: backend}
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      targetPort: 8080
+---
+# ------------------------------ Frontend ------------------------------
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: frontend
+  labels: {app: barberia, component: frontend}
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: frontend
+  labels: {app: barberia, component: frontend}
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/julian2lidels/proyecto-barberia.git
+      ref: main
+    contextDir: frontend
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: frontend:latest
+  resources:
+    limits: {cpu: "1", memory: 1Gi}
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels: {app: barberia, component: frontend}
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"frontend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"frontend\")].image"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: barberia, component: frontend}
+  template:
+    metadata:
+      labels: {app: barberia, component: frontend}
+    spec:
+      containers:
+        - name: frontend
+          image: frontend:latest
+          ports:
+            - containerPort: 8080
+              name: 8080-tcp
+          env:
+            - name: BACKEND_URL
+              value: http://backend:8080
+          readinessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 300m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels: {app: barberia, component: frontend}
+spec:
+  selector: {app: barberia, component: frontend}
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      targetPort: 8080
+---
+# URL publica (HTTPS)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: frontend
+  labels: {app: barberia, component: frontend}
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

@@ -1,0 +1,56 @@
+# Barbería en local con Docker: MySQL + backend + frontend
+#   Levantar todo:     docker compose up --build
+#   Solo la base:      docker compose up -d mysql
+#   Detener:           docker compose down        (los datos se conservan)
+#   Borrar los datos:  docker compose down -v
+#
+# Abre http://localhost:8080  ·  Personal: http://localhost:8080/staff/login
+
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootclave123}
+      MYSQL_DATABASE: barberia
+      MYSQL_USER: barberuser
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-barberclave123}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      # Crea el esquema la primera vez que se inicia la base (opcional)
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build: ./backend
+    environment:
+      DB_HOST: mysql
+      DB_PORT: "3306"
+      DB_USER: barberuser
+      DB_PASS: ${MYSQL_PASSWORD:-barberclave123}
+      DB_NAME: barberia
+      SECRET_KEY: ${SECRET_KEY:-cambia-esta-clave-local}
+      ADMIN_USER: ${ADMIN_USER:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    ports:
+      - "8000:8080"   # API directa en http://localhost:8000/docs
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    environment:
+      BACKEND_URL: http://backend:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - backend
+
+volumes:
+  mysql_data:
