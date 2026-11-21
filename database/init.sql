@@ -2,7 +2,7 @@ CREATE TABLE IF NOT EXISTS servicios (
     id           INT AUTO_INCREMENT PRIMARY KEY,
     nombre       VARCHAR(80)  NOT NULL UNIQUE,
     descripcion  VARCHAR(200),
-    precio       INT          NOT NULL,                 -- pesos colombianos
+    precio       INT          NOT NULL,               
     duracion_min INT          NOT NULL DEFAULT 30,
     activo       BOOLEAN      NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -15,11 +15,11 @@ CREATE TABLE IF NOT EXISTS barberos (
     activo       BOOLEAN      NOT NULL DEFAULT TRUE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE TABLE IF NOT EXISTS usuarios (                  -- cuentas del personal
+CREATE TABLE IF NOT EXISTS usuarios (                  
     id            INT AUTO_INCREMENT PRIMARY KEY,
     usuario       VARCHAR(50)  NOT NULL UNIQUE,
     password_hash VARCHAR(200) NOT NULL,
-    rol           VARCHAR(20)  NOT NULL,               -- admin | barbero
+    rol           VARCHAR(20)  NOT NULL,           
     id_barbero    INT NULL,
     FOREIGN KEY (id_barbero) REFERENCES barberos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -38,7 +38,7 @@ CREATE TABLE IF NOT EXISTS citas (
     id_servicio INT      NOT NULL,
     inicio      DATETIME NOT NULL,
     fin         DATETIME NOT NULL,
-    estado      VARCHAR(20) NOT NULL DEFAULT 'pendiente',  -- pendiente | confirmada | completada | cancelada
+    estado      VARCHAR(20) NOT NULL DEFAULT 'pendiente', 
     notas       VARCHAR(200),
     creada      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (id_cliente)  REFERENCES clientes(id),
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS citas (
     INDEX idx_citas_inicio (inicio)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Datos iniciales (solo se insertan si las tablas están vacías)
+
 INSERT INTO servicios (nombre, descripcion, precio, duracion_min)
 SELECT * FROM (
     SELECT 'Corte clásico' AS nombre, 'Corte a tijera o máquina con acabado a navaja' AS descripcion, 25000 AS precio, 30 AS duracion_min
