@@ -1,0 +1,106 @@
+# =====================================================================
+# 03 - Frontend React + Nginx  (nodo propio en Topology: "frontend", flecha hacia backend)
+#   oc apply -f 03-frontend.yaml
+# =====================================================================
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: frontend
+  labels: {app: frontend, app.kubernetes.io/part-of: barberia-web}
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: frontend
+  labels: {app: frontend, app.kubernetes.io/part-of: barberia-web}
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/julian2lidels/proyecto-barberia.git
+      ref: main
+    contextDir: frontend
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: frontend:latest
+  resources:
+    limits: {cpu: "1", memory: 1Gi}
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  labels:
+    app: frontend
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: barberia-web
+    app.openshift.io/runtime: nginx
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"frontend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"frontend\")].image"}]'
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"backend"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: frontend}
+  template:
+    metadata:
+      labels: {app: frontend}
+    spec:
+      containers:
+        - name: frontend
+          image: frontend:latest
+          ports:
+            - containerPort: 8080
+              name: 8080-tcp
+          env:
+            - name: BACKEND_URL
+              value: http://backend:8080
+          readinessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /, port: 8080}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {cpu: 300m, memory: 256Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  labels: {app: frontend, app.kubernetes.io/part-of: barberia-web}
+spec:
+  selector: {app: frontend}
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      targetPort: 8080
+---
+# URL publica (HTTPS)
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: frontend
+  labels: {app: frontend, app.kubernetes.io/part-of: barberia-web}
+spec:
+  to:
+    kind: Service
+    name: frontend
+  port:
+    targetPort: 8080-tcp
+  tls:
+    termination: edge
+    insecureEdgeTerminationPolicy: Redirect

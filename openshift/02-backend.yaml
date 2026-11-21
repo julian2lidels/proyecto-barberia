@@ -1,0 +1,111 @@
+# =====================================================================
+# 02 - Backend FastAPI  (nodo propio en Topology: "backend", flecha hacia mysql)
+#   oc apply -f 02-backend.yaml
+# =====================================================================
+apiVersion: image.openshift.io/v1
+kind: ImageStream
+metadata:
+  name: backend
+  labels: {app: backend, app.kubernetes.io/part-of: barberia-api}
+spec:
+  lookupPolicy:
+    local: true
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: backend
+  labels: {app: backend, app.kubernetes.io/part-of: barberia-api}
+spec:
+  source:
+    type: Git
+    git:
+      uri: https://github.com/julian2lidels/proyecto-barberia.git
+      ref: main
+    contextDir: backend
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+  output:
+    to:
+      kind: ImageStreamTag
+      name: backend:latest
+  triggers:
+    - type: ConfigChange
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  labels:
+    app: backend
+    app.kubernetes.io/name: backend
+    app.kubernetes.io/part-of: barberia-api
+    app.openshift.io/runtime: python
+  annotations:
+    image.openshift.io/triggers: '[{"from":{"kind":"ImageStreamTag","name":"backend:latest"},"fieldPath":"spec.template.spec.containers[?(@.name==\"backend\")].image"}]'
+    app.openshift.io/connects-to: '[{"apiVersion":"apps/v1","kind":"Deployment","name":"mysql"}]'
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: backend}
+  template:
+    metadata:
+      labels: {app: backend}
+    spec:
+      containers:
+        - name: backend
+          image: backend:latest
+          ports:
+            - containerPort: 8080
+              name: 8080-tcp
+          env:
+            - name: DB_HOST
+              value: mysql
+            - name: DB_PORT
+              value: "3306"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_USER}
+            - name: DB_PASS
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_PASSWORD}
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef: {name: mysql-secret, key: MYSQL_DATABASE}
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: SECRET_KEY}
+            - name: ADMIN_USER
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: ADMIN_USER}
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef: {name: app-secret, key: ADMIN_PASSWORD}
+          # El backend espera a MySQL antes de arrancar: damos hasta ~3 min
+          startupProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 5
+            failureThreshold: 36
+          readinessProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: {path: /api/health, port: 8080}
+            periodSeconds: 20
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {cpu: 500m, memory: 512Mi}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+  labels: {app: backend, app.kubernetes.io/part-of: barberia-api}
+spec:
+  selector: {app: backend}
+  ports:
+    - name: 8080-tcp
+      port: 8080
+      targetPort: 8080
