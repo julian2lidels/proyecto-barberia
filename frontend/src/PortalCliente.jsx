@@ -2,14 +2,17 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "./api"
 
-
-const IMAGEN_FONDO = "/frontend/public/barber.jpg"
+// Si guardas tu foto en frontend/public/fondo-barberia.jpg la usará automáticamente;
+// si no existe o falla, cargará la imagen de respaldo de barbería clásica.
+const IMAGEN_LOCAL = `${import.meta.env.BASE_URL}fondo-barberia.jpg`
+const IMAGEN_RESPALDO = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1920&q=80"
 
 function PortalCliente() {
   const [barberos, setBarberos] = useState([])
   const [servicios, setServicios] = useState([])
   const [errorCarga, setErrorCarga] = useState("")
   const [menuAbierto, setMenuAbierto] = useState(false)
+  const [fondoUrl, setFondoUrl] = useState(IMAGEN_LOCAL)
 
   const [nombreCliente, setNombreCliente] = useState("")
   const [telefonoCliente, setTelefonoCliente] = useState("")
@@ -21,6 +24,13 @@ function PortalCliente() {
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" })
 
   const navigate = useNavigate()
+
+  // Verifica si la imagen local existe; si no, aplica la de respaldo
+  useEffect(() => {
+    const img = new Image()
+    img.src = IMAGEN_LOCAL
+    img.onerror = () => setFondoUrl(IMAGEN_RESPALDO)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -62,7 +72,7 @@ function PortalCliente() {
       })
       setMensaje({
         tipo: "ok",
-        texto: "Tu cita ha sido reservada con éxito. Te esperamos.",
+        texto: "Tu cita en Barbería Monarca ha sido reservada con éxito. Te esperamos.",
       })
       setNombreCliente("")
       setTelefonoCliente("")
@@ -74,7 +84,7 @@ function PortalCliente() {
     } catch (err) {
       setMensaje({
         tipo: "error",
-        texto: err.message || "Ese horario no está disponible con el especialista elegido.",
+        texto: err.message || "Ese horario no está disponible con el barbero elegido.",
       })
     }
   }
@@ -88,11 +98,11 @@ function PortalCliente() {
             onClick={() => irASeccion("inicio")}
             className="btn-hairy-ghost text-left group"
           >
-            <span className="block font-hairy-serif text-2xl sm:text-3xl font-bold tracking-[0.22em] text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
-              HAIRY
+            <span className="block font-hairy-serif text-xl sm:text-2xl font-bold tracking-[0.22em] text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
+              BARBERÍA MONARCA
             </span>
-            <span className="block text-[9px] tracking-[0.32em] text-[#D4A359]">
-              BARBERÍA &amp; SALÓN
+            <span className="block text-[9px] tracking-[0.34em] text-[#D4A359]">
+              CORTE CLÁSICO &amp; BARBA
             </span>
           </button>
 
@@ -105,7 +115,7 @@ function PortalCliente() {
               Servicios
             </button>
             <button onClick={() => irASeccion("barberos")} className="btn-hairy-ghost">
-              Especialistas
+              Barberos
             </button>
             <button
               onClick={() => irASeccion("reservar")}
@@ -115,7 +125,7 @@ function PortalCliente() {
             </button>
           </nav>
 
-          {/* Botón Menú Móvil (sin recuadro) */}
+          {/* Botón Menú Móvil */}
           <button
             onClick={() => setMenuAbierto(!menuAbierto)}
             aria-label="Abrir menú"
@@ -143,7 +153,7 @@ function PortalCliente() {
               Servicios
             </button>
             <button onClick={() => irASeccion("barberos")} className="btn-hairy-ghost text-left">
-              Especialistas
+              Barberos
             </button>
             <button
               onClick={() => irASeccion("reservar")}
@@ -155,19 +165,18 @@ function PortalCliente() {
         )}
       </header>
 
-      {/* Hero con Imagen Personalizada + Degradado Negro */}
+      {/* Hero con Imagen + Degradado Negro */}
       <section className="relative min-h-[82vh] sm:min-h-[88vh] flex items-center justify-center px-5 sm:px-6 py-20 text-center overflow-hidden border-b border-[#D4A359]/15">
-        {/* Capa 1: Tu imagen de fondo */}
+        {/* Capa 1: Imagen de fondo */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
-          style={{ backgroundImage: `url('${IMAGEN_FONDO}')` }}
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url("${fondoUrl}")` }}
         />
 
-        {/* Capa 2: Degradado negro cinematográfico (oscurece bordes y funde hacia abajo) */}
+        {/* Capa 2: Degradado negro elegante */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/65 to-[#0E0D0C]" />
-        <div className="absolute inset-0 bg-radial from-transparent via-black/40 to-black/85" />
 
-        {/* Contenido centrado sobre el degradado */}
+        {/* Contenido centrado */}
         <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
           <div className="flex items-center gap-3 sm:gap-4 mb-5 text-[#D4A359]">
             <span className="h-[1px] w-8 sm:w-12 bg-[#D4A359]/60"></span>
@@ -179,16 +188,16 @@ function PortalCliente() {
             <span className="h-[1px] w-8 sm:w-12 bg-[#D4A359]/60"></span>
           </div>
 
-          <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.3em] sm:tracking-[0.38em] mb-3">
-            Barbería Clásica &amp; Salón de Belleza
+          <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.32em] sm:tracking-[0.38em] mb-3">
+            Barbería Clásica &amp; Tradicional
           </p>
 
           <h1 className="font-hairy-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FAF3EA] leading-tight">
-            El Arte del <span className="italic text-[#D4A359]">Estilo</span> y el Cuidado
+            El Arte del <span className="italic text-[#D4A359]">Estilo</span> y la Navaja
           </h1>
 
           <p className="text-[#D6CCC2] text-sm sm:text-base mt-5 max-w-xl leading-relaxed px-2">
-            Cortes de precisión, ritual de barba tradicional y tratamientos capilares diseñados a tu medida. Agenda tu sesión sin filas ni esperas.
+            Cortes de precisión, perfilado y ritual de barba tradicional diseñados a tu medida. Agenda tu turno sin filas ni esperas.
           </p>
 
           {/* Botones sin recuadro */}
@@ -222,7 +231,7 @@ function PortalCliente() {
       <section id="servicios" className="max-w-5xl mx-auto px-5 sm:px-6 py-16 sm:py-24">
         <div className="text-center mb-12 sm:mb-16">
           <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
-            Carta de Tratamientos
+            Carta de Cortes
           </p>
           <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
             Servicios &amp; Tarifas
@@ -245,7 +254,7 @@ function PortalCliente() {
                   {s.nombre}
                 </h3>
                 <p className="text-xs text-[#B5ABA0] mt-1 leading-relaxed">
-                  {s.descripcion || "Atención personalizada de barbería y salón"} ·{" "}
+                  {s.descripcion || "Servicio profesional de barbería"} ·{" "}
                   <span className="text-[#D4A359]">{s.duracion_minutos} min</span>
                 </p>
               </div>
@@ -262,7 +271,7 @@ function PortalCliente() {
         </div>
       </section>
 
-      {/* Equipo de Especialistas / Barberos */}
+      {/* Equipo de Barberos */}
       <section id="barberos" className="bg-[#141311] border-y border-[#D4A359]/15 py-16 sm:py-24 px-5 sm:px-6">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12 sm:mb-16">
@@ -270,7 +279,7 @@ function PortalCliente() {
               Nuestros Profesionales
             </p>
             <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
-              Barberos &amp; Estilistas
+              Nuestros Barberos
             </h2>
             <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-4"></div>
           </div>
@@ -292,7 +301,7 @@ function PortalCliente() {
                   {b.nombre}
                 </h3>
                 <p className="text-xs text-[#B5ABA0] uppercase tracking-[0.2em] mt-1">
-                  {b.especialidad || "Barbero & Estilista"}
+                  {b.especialidad || "Barbero Clásico"}
                 </p>
                 <div className="mt-5">
                   <span className="btn-hairy-ghost text-xs font-semibold text-[#D4A359] group-hover:text-[#FFF1CE]">
@@ -312,7 +321,7 @@ function PortalCliente() {
             Agenda en Línea
           </p>
           <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
-            Reserva tu Sesión
+            Reserva tu Turno
           </h2>
           <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-4"></div>
         </div>
@@ -371,7 +380,7 @@ function PortalCliente() {
               className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             >
-              <option value="" disabled>Selecciona un tratamiento</option>
+              <option value="" disabled>Selecciona un servicio</option>
               {servicios.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.nombre} — ${Number(s.precio).toLocaleString()} ({s.duracion_minutos} min)
@@ -382,7 +391,7 @@ function PortalCliente() {
 
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
-              Especialista
+              Barbero
             </label>
             <select
               value={barberoId}
@@ -390,7 +399,7 @@ function PortalCliente() {
               className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             >
-              <option value="" disabled>Selecciona un especialista</option>
+              <option value="" disabled>Selecciona un barbero</option>
               {barberos.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.nombre} {b.especialidad ? `(${b.especialidad})` : ""}
@@ -452,7 +461,7 @@ function PortalCliente() {
       {/* Pie de página */}
       <footer className="border-t border-[#D4A359]/15 py-10 px-5 text-center text-xs text-[#9C9288]">
         <p className="font-hairy-serif text-base tracking-[0.25em] text-[#D4A359] mb-2">
-          HAIRY · BARBERÍA &amp; SALÓN DE BELLEZA
+          BARBERÍA MONARCA
         </p>
         <p>
           Todos los derechos reservados{" "}
