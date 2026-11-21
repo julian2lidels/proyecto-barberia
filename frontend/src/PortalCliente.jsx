@@ -84,7 +84,7 @@ function PortalCliente() {
             className="btn-hairy-ghost text-left group"
           >
             <span className="block font-hairy-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] text-[#F7F0E6] group-hover:text-[#D4A359] transition-colors">
-              HAIRY
+              MONARCA
             </span>
             <span className="block text-[9px] tracking-[0.35em] text-[#D4A359] mt-0.5">
               BARBERÍA &amp; SALÓN
@@ -384,7 +384,7 @@ function PortalCliente() {
             />
           </div>
 
-          {/* Botón sin recuadro que cambia de color al pasar el cursor y al oprimir */}
+    
           <div className="md:col-span-2 pt-4 text-center">
             <button
               type="submit"
@@ -396,7 +396,7 @@ function PortalCliente() {
         </form>
       </section>
 
-      {/* Pie de página discreto con acceso oculto para personal */}
+
       <footer className="border-t border-[#D4A359]/15 py-10 text-center text-xs text-[#A8988A]">
         <p className="font-hairy-serif text-base tracking-[0.25em] text-[#D4A359] mb-2">
           Barbería Monarca &amp; Barberia
