@@ -1,292 +1,415 @@
-import { useEffect, useState } from "react"
-import Navbar from "./components/Navbar"
-import { api, fechaHora, hoyISO, precio } from "./api"
-
-const FORM_VACIO = { id_servicio: "", id_barbero: "", fecha: "", hora: "", nombre: "", telefono: "", email: "" }
+import { useState, useEffect } from "react"
+import { useNavigate } from "react-router-dom"
+import { api } from "./api"
 
 function PortalCliente() {
-  const [servicios, setservicios] = useState([])
-  const [barberos, setbarberos] = useState([])
-  const [errorCarga, seterrorCarga] = useState("")
+  const [barberos, setBarberos] = useState([])
+  const [servicios, setServicios] = useState([])
+  const [errorCarga, setErrorCarga] = useState("")
 
-  const [form, setform] = useState(FORM_VACIO)
-  const [horarios, sethorarios] = useState([])
-  const [cargandoHorarios, setcargandoHorarios] = useState(false)
-  const [recarga, setrecarga] = useState(0)
-  const [enviando, setenviando] = useState(false)
-  const [error, seterror] = useState("")
-  const [confirmada, setconfirmada] = useState(null)
+  const [nombreCliente, setNombreCliente] = useState("")
+  const [telefonoCliente, setTelefonoCliente] = useState("")
+  const [barberoId, setBarberoId] = useState("")
+  const [servicioId, setServicioId] = useState("")
+  const [fecha, setFecha] = useState("")
+  const [horaInicio, setHoraInicio] = useState("")
+  const [notas, setNotas] = useState("")
+  const [mensaje, setMensaje] = useState({ tipo: "", texto: "" })
 
-  const [telConsulta, settelConsulta] = useState("")
-  const [misCitas, setmisCitas] = useState(null)
-  const [errorConsulta, seterrorConsulta] = useState("")
+  const navigate = useNavigate()
 
   useEffect(() => {
-    Promise.all([api("/api/servicios"), api("/api/barberos")])
-      .then(([s, b]) => {
-        setservicios(s)
-        setbarberos(b)
+    Promise.all([
+      api("/publico/barberos"),
+      api("/publico/servicios"),
+    ])
+      .then(([dataBarberos, dataServicios]) => {
+        setBarberos(dataBarberos || [])
+        setServicios(dataServicios || [])
+        setErrorCarga("")
       })
-      .catch((e) => seterrorCarga(e.message))
+      .catch((err) => {
+        setErrorCarga(err.message || "No se pudo cargar el catálogo en este momento.")
+      })
   }, [])
 
-  // Cada vez que cambia servicio, barbero o fecha, se consultan las horas libres
-  useEffect(() => {
-    const { id_servicio, id_barbero, fecha } = form
-    if (!id_servicio || !id_barbero || !fecha) {
-      sethorarios([])
-      return
-    }
-    let vigente = true
-    setcargandoHorarios(true)
-    api(`/api/disponibilidad?id_barbero=${id_barbero}&id_servicio=${id_servicio}&fecha=${fecha}`)
-      .then((d) => {
-        if (vigente) sethorarios(d.horarios)
-      })
-      .catch((e) => {
-        if (vigente) {
-          sethorarios([])
-          seterror(e.message)
-        }
-      })
-      .finally(() => {
-        if (vigente) setcargandoHorarios(false)
-      })
-    return () => {
-      vigente = false
-    }
-  }, [form.id_servicio, form.id_barbero, form.fecha, recarga])
-
-  const cambiar = (campo, valor) => {
-    seterror("")
-    setform((prev) => {
-      const nuevo = { ...prev, [campo]: valor }
-      if (["id_servicio", "id_barbero", "fecha"].includes(campo)) nuevo.hora = ""
-      return nuevo
-    })
+  const irASeccion = (id) => {
+    const el = document.getElementById(id)
+    if (el) el.scrollIntoView({ behavior: "smooth" })
   }
 
-  const elegirServicio = (id) => {
-    cambiar("id_servicio", String(id))
-    const destino = document.getElementById("reservar")
-    if (destino) destino.scrollIntoView({ behavior: "smooth" })
-  }
-
-  const reservar = async (e) => {
+  const reservarTurno = async (e) => {
     e.preventDefault()
-    seterror("")
-    if (!form.hora) {
-      seterror("Elige una hora disponible")
-      return
-    }
-    setenviando(true)
-    try {
-      const cita = await api("/api/citas", {
-        metodo: "POST",
-        cuerpo: {
-          nombre: form.nombre,
-          telefono: form.telefono,
-          email: form.email || null,
-          id_barbero: Number(form.id_barbero),
-          id_servicio: Number(form.id_servicio),
-          inicio: `${form.fecha}T${form.hora}:00`,
-        },
-      })
-      setconfirmada(cita)
-      setform(FORM_VACIO)
-    } catch (err) {
-      seterror(err.message)
-      setrecarga((n) => n + 1) // refresca las horas por si alguien tomó ese turno
-    } finally {
-      setenviando(false)
-    }
-  }
+    setMensaje({ tipo: "", texto: "" })
 
-  const consultar = async (e) => {
-    e.preventDefault()
-    seterrorConsulta("")
-    setmisCitas(null)
     try {
-      setmisCitas(await api(`/api/citas/consulta?telefono=${encodeURIComponent(telConsulta)}`))
+      await api("/publico/reservar", {
+        method: "POST",
+        body: JSON.stringify({
+          nombre_cliente: nombreCliente,
+          telefono_cliente: telefonoCliente,
+          barbero_id: parseInt(barberoId, 10),
+          servicio_id: parseInt(servicioId, 10),
+          fecha,
+          hora_inicio: horaInicio,
+          notas,
+        }),
+      })
+      setMensaje({
+        tipo: "ok",
+        texto: "Tu cita en Hairy ha sido reservada con éxito. Te esperamos.",
+      })
+      setNombreCliente("")
+      setTelefonoCliente("")
+      setBarberoId("")
+      setServicioId("")
+      setFecha("")
+      setHoraInicio("")
+      setNotas("")
     } catch (err) {
-      seterrorConsulta(err.message)
+      setMensaje({
+        tipo: "error",
+        texto: err.message || "Ese horario no está disponible con el especialista elegido.",
+      })
     }
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
+    <div id="inicio" className="min-h-screen bg-[#2F251E] text-[#F4EDE4] selection:bg-[#D4A359] selection:text-[#231B15]">
+      {/* Encabezado limpio estilo Hairy con botones sin recuadro */}
+      <header className="sticky top-0 z-50 bg-[#29201A]/90 backdrop-blur-md border-b border-[#D4A359]/20">
+        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+          <button
+            onClick={() => irASeccion("inicio")}
+            className="btn-hairy-ghost text-left group"
+          >
+            <span className="block font-hairy-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] text-[#F7F0E6] group-hover:text-[#D4A359] transition-colors">
+              HAIRY
+            </span>
+            <span className="block text-[9px] tracking-[0.35em] text-[#D4A359] mt-0.5">
+              BARBERÍA &amp; SALÓN
+            </span>
+          </button>
 
-      <header className="relative overflow-hidden px-6 py-24 text-center">
-        <div className="pointer-events-none absolute left-1/2 top-[-10rem] h-[30rem] w-[40rem] -translate-x-1/2 rounded-full bg-amber-500/10 blur-[120px]"></div>
-        <p className="relative mb-3 text-xs font-bold uppercase tracking-[0.3em] text-amber-400">Corte · Barba · Estilo</p>
-        <h1 className="relative text-4xl font-black tracking-tight text-white sm:text-6xl">Tu mejor versión empieza aquí</h1>
-        <p className="relative mx-auto mt-5 max-w-xl text-neutral-400">
-          Reserva tu cita en línea, elige a tu barbero y llega sin esperas.
-        </p>
-        <a href="#reservar" className="btn relative mt-8">Reservar cita</a>
+          <nav className="flex items-center gap-6 sm:gap-9 text-xs font-semibold">
+            <button onClick={() => irASeccion("inicio")} className="btn-hairy-ghost">
+              Inicio
+            </button>
+            <button onClick={() => irASeccion("servicios")} className="btn-hairy-ghost">
+              Servicios
+            </button>
+            <button onClick={() => irASeccion("barberos")} className="btn-hairy-ghost">
+              Especialistas
+            </button>
+            <button
+              onClick={() => irASeccion("reservar")}
+              className="btn-hairy-ghost text-[#D4A359] hover:text-[#FCE2A6] active:text-[#B58338]"
+            >
+              Reservar Cita
+            </button>
+          </nav>
+        </div>
       </header>
 
-      <main className="mx-auto max-w-6xl space-y-24 px-6 pb-24">
-        {errorCarga && <p className="text-center text-red-400">{errorCarga}</p>}
-
-        <section>
-          <h2 className="mb-8 text-2xl font-extrabold text-white">Servicios</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {servicios.map((s) => (
-              <div key={s.id} className="tarjeta flex flex-col justify-between">
-                <div>
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="text-lg font-bold text-white">{s.nombre}</h3>
-                    <span className="font-black text-amber-400">{precio(s.precio)}</span>
-                  </div>
-                  <p className="mt-2 text-sm text-neutral-400">{s.descripcion}</p>
-                </div>
-                <div className="mt-5 flex items-center justify-between">
-                  <span className="text-xs text-neutral-500">{s.duracion_min} min</span>
-                  <button onClick={() => elegirServicio(s.id)} className="btn-suave">Reservar</button>
-                </div>
-              </div>
-            ))}
+      {/* Hero Editorial Hairy */}
+      <section className="relative py-24 sm:py-32 px-6 text-center bg-gradient-to-b from-[#3D3026] via-[#342921] to-[#2F251E] border-b border-[#D4A359]/15">
+        <div className="max-w-3xl mx-auto flex flex-col items-center">
+          {/* Ornamento dorado clásico */}
+          <div className="flex items-center gap-4 mb-6 text-[#D4A359]">
+            <span className="h-[1px] w-12 bg-[#D4A359]/50"></span>
+            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <circle cx="6" cy="18" r="2.5" />
+              <circle cx="18" cy="18" r="2.5" />
+              <path d="M7.8 16.2L19 4M16.2 16.2L5 4" />
+            </svg>
+            <span className="h-[1px] w-12 bg-[#D4A359]/50"></span>
           </div>
-        </section>
 
-        <section>
-          <h2 className="mb-8 text-2xl font-extrabold text-white">Nuestros barberos</h2>
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {barberos.map((b) => (
-              <div key={b.id} className="tarjeta flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-amber-500/15 text-xl font-black text-amber-400">
-                  {b.nombre.charAt(0)}
-                </div>
-                <div>
-                  <h3 className="font-bold text-white">{b.nombre}</h3>
-                  <p className="text-sm text-neutral-400">{b.especialidad}</p>
-                </div>
-              </div>
-            ))}
+          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.38em] mb-4">
+            Barbería Clásica &amp; Salón de Belleza
+          </p>
+
+          <h1 className="font-hairy-serif text-5xl sm:text-7xl font-bold text-[#FAF3EA] leading-tight">
+            El Arte del <span className="italic text-[#D4A359]">Estilo</span> y el Cuidado
+          </h1>
+
+          <p className="text-[#CFC2B4] text-sm sm:text-base mt-6 max-w-xl leading-relaxed">
+            Cortes de precisión, ritual de barba tradicional y tratamientos capilares diseñados a tu medida. Agenda tu sesión sin filas ni esperas.
+          </p>
+
+          {/* Botones sin recuadro en el hero */}
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-10">
+            <button
+              onClick={() => irASeccion("reservar")}
+              className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] active:text-[#A97832] pb-1 border-b border-[#D4A359]"
+            >
+              Agendar Turno →
+            </button>
+            <button
+              onClick={() => irASeccion("servicios")}
+              className="btn-hairy-ghost text-sm font-semibold text-[#E6DDD3] hover:text-[#D4A359] active:text-[#A97832]"
+            >
+              Explorar Carta de Servicios
+            </button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section id="reservar" className="scroll-mt-24">
-          <h2 className="mb-8 text-2xl font-extrabold text-white">Reserva tu cita</h2>
+      {/* Mensaje de error si falla conexión */}
+      {errorCarga && (
+        <div className="max-w-4xl mx-auto mt-8 px-6">
+          <p className="text-center text-xs text-[#E8998D] bg-[#3E2620] border border-[#E8998D]/30 py-3 px-4 rounded-lg">
+            {errorCarga}
+          </p>
+        </div>
+      )}
 
-          {confirmada ? (
-            <div className="tarjeta border-amber-500/40 text-center">
-              <p className="text-4xl">✅</p>
-              <h3 className="mt-3 text-xl font-bold text-white">¡Cita registrada!</h3>
-              <p className="mt-2 text-neutral-300">
-                {confirmada.servicio_nombre} con {confirmada.barbero_nombre}
-              </p>
-              <p className="font-bold text-amber-400">{fechaHora(confirmada.inicio)}</p>
-              <p className="mt-2 text-sm text-neutral-500">Queda pendiente de confirmación por la barbería.</p>
-              <button onClick={() => setconfirmada(null)} className="btn mt-6">Reservar otra</button>
-            </div>
-          ) : (
-            <form onSubmit={reservar} className="tarjeta space-y-6">
-              <div className="grid gap-5 md:grid-cols-3">
-                <div>
-                  <label className="etiqueta">Servicio</label>
-                  <select className="campo" value={form.id_servicio} onChange={(e) => cambiar("id_servicio", e.target.value)} required>
-                    <option value="">Elige un servicio</option>
-                    {servicios.map((s) => (
-                      <option key={s.id} value={s.id}>{s.nombre} · {precio(s.precio)}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="etiqueta">Barbero</label>
-                  <select className="campo" value={form.id_barbero} onChange={(e) => cambiar("id_barbero", e.target.value)} required>
-                    <option value="">Elige un barbero</option>
-                    {barberos.map((b) => (
-                      <option key={b.id} value={b.id}>{b.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="etiqueta">Fecha</label>
-                  <input type="date" className="campo" min={hoyISO()} value={form.fecha} onChange={(e) => cambiar("fecha", e.target.value)} required />
-                </div>
-              </div>
+      {/* Carta de Servicios */}
+      <section id="servicios" className="max-w-5xl mx-auto px-6 py-24">
+        <div className="text-center mb-16">
+          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+            Carta de Tratamientos
+          </p>
+          <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+            Servicios &amp; Tarifas
+          </h2>
+          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+        </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8">
+          {servicios.map((s) => (
+            <div
+              key={s.id}
+              onClick={() => {
+                setServicioId(String(s.id))
+                irASeccion("reservar")
+              }}
+              className="group cursor-pointer pb-5 border-b border-[#D4A359]/20 hover:border-[#D4A359] transition-colors flex justify-between items-start gap-4"
+            >
               <div>
-                <label className="etiqueta">Hora disponible</label>
-                {!form.id_servicio || !form.id_barbero || !form.fecha ? (
-                  <p className="text-sm text-neutral-500">Elige servicio, barbero y fecha para ver las horas libres.</p>
-                ) : cargandoHorarios ? (
-                  <p className="text-sm text-neutral-500">Buscando horas libres...</p>
-                ) : horarios.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No hay horas libres ese día, prueba otra fecha u otro barbero.</p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {horarios.map((h) => (
-                      <button
-                        type="button"
-                        key={h}
-                        onClick={() => cambiar("hora", h)}
-                        className={
-                          "rounded-lg border px-3 py-2 text-sm font-semibold transition " +
-                          (form.hora === h
-                            ? "border-amber-500 bg-amber-500 text-neutral-950"
-                            : "border-white/10 bg-white/5 text-neutral-200 hover:bg-white/10")
-                        }
-                      >
-                        {h}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <h3 className="font-hairy-serif text-2xl font-semibold text-[#F7F0E6] group-hover:text-[#D4A359] transition-colors">
+                  {s.nombre}
+                </h3>
+                <p className="text-xs text-[#BFAEA0] mt-1.5 leading-relaxed">
+                  {s.descripcion || "Atención personalizada de barbería y salón"} ·{" "}
+                  <span className="text-[#D4A359]/90">{s.duracion_minutos} min</span>
+                </p>
               </div>
-
-              <div className="grid gap-5 md:grid-cols-3">
-                <div>
-                  <label className="etiqueta">Tu nombre</label>
-                  <input className="campo" value={form.nombre} onChange={(e) => cambiar("nombre", e.target.value)} required />
-                </div>
-                <div>
-                  <label className="etiqueta">Teléfono / WhatsApp</label>
-                  <input className="campo" inputMode="tel" placeholder="3001234567" value={form.telefono} onChange={(e) => cambiar("telefono", e.target.value)} required />
-                </div>
-                <div>
-                  <label className="etiqueta">Correo (opcional)</label>
-                  <input type="email" className="campo" value={form.email} onChange={(e) => cambiar("email", e.target.value)} />
-                </div>
+              <div className="text-right shrink-0">
+                <span className="font-hairy-serif text-2xl font-bold text-[#D4A359] block">
+                  ${Number(s.precio).toLocaleString()}
+                </span>
+                <span className="btn-hairy-ghost text-[10px] text-[#BFAEA0] group-hover:text-[#F7F0E6]">
+                  Elegir
+                </span>
               </div>
-
-              {error && <p className="text-sm text-red-400">{error}</p>}
-              <button type="submit" className="btn" disabled={enviando}>
-                {enviando ? "Reservando..." : "Confirmar reserva"}
-              </button>
-            </form>
-          )}
-        </section>
-
-        <section>
-          <h2 className="mb-6 text-2xl font-extrabold text-white">Consulta tus próximas citas</h2>
-          <form onSubmit={consultar} className="flex max-w-xl flex-col gap-3 sm:flex-row">
-            <input className="campo" inputMode="tel" placeholder="Tu teléfono" value={telConsulta} onChange={(e) => settelConsulta(e.target.value)} required />
-            <button type="submit" className="btn">Buscar</button>
-          </form>
-          {errorConsulta && <p className="mt-3 text-sm text-red-400">{errorConsulta}</p>}
-          {misCitas && (
-            <div className="mt-5 max-w-xl space-y-3">
-              {misCitas.length === 0 && <p className="text-sm text-neutral-500">No tienes citas próximas con ese teléfono.</p>}
-              {misCitas.map((c) => (
-                <div key={c.id} className="tarjeta flex items-center justify-between py-4">
-                  <div>
-                    <p className="font-bold text-white">{c.servicio_nombre} · {c.barbero_nombre}</p>
-                    <p className="text-sm text-neutral-400">{fechaHora(c.inicio)}</p>
-                  </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-amber-400">{c.estado}</span>
-                </div>
-              ))}
             </div>
-          )}
-        </section>
-      </main>
+          ))}
+        </div>
+      </section>
 
-      <footer className="border-t border-white/10 py-8 text-center text-sm text-neutral-500">
-        © {new Date().getFullYear()} Barbería · Todos los derechos reservados
+      {/* Equipo de Especialistas / Barberos */}
+      <section id="barberos" className="bg-[#382C23] border-y border-[#D4A359]/15 py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+              Nuestros Profesionales
+            </p>
+            <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+              Barberos &amp; Estilistas
+            </h2>
+            <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+            {barberos.map((b) => (
+              <div
+                key={b.id}
+                onClick={() => {
+                  setBarberoId(String(b.id))
+                  irASeccion("reservar")
+                }}
+                className="group cursor-pointer bg-[#2F251E] p-8 rounded-2xl border border-[#D4A359]/15 hover:border-[#D4A359]/60 transition-all text-center"
+              >
+                <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-[#3D3026] border border-[#D4A359]/40 flex items-center justify-center font-hairy-serif text-3xl font-bold text-[#D4A359] group-hover:border-[#D4A359] transition-colors">
+                  {b.nombre?.charAt(0)}
+                </div>
+                <h3 className="font-hairy-serif text-2xl font-bold text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
+                  {b.nombre}
+                </h3>
+                <p className="text-xs text-[#BFAEA0] uppercase tracking-[0.2em] mt-1.5">
+                  {b.especialidad || "Barbero & Estilista"}
+                </p>
+                <div className="mt-6">
+                  <span className="btn-hairy-ghost text-xs font-semibold text-[#D4A359] group-hover:text-[#FFF1CE]">
+                    Reservar con {b.nombre?.split(" ")[0]} →
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Formulario de Reserva */}
+      <section id="reservar" className="max-w-4xl mx-auto px-6 py-24">
+        <div className="text-center mb-12">
+          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+            Agenda en Línea
+          </p>
+          <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+            Reserva tu Sesión
+          </h2>
+          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+        </div>
+
+        {mensaje.texto && (
+          <div
+            className={`mb-8 p-4 rounded-xl text-center text-sm font-medium border ${
+              mensaje.tipo === "ok"
+                ? "bg-[#263528] border-[#76C882]/40 text-[#B4EEBC]"
+                : "bg-[#3E2520] border-[#E8998D]/40 text-[#F5BEB5]"
+            }`}
+          >
+            {mensaje.texto}
+          </div>
+        )}
+
+        <form
+          onSubmit={reservarTurno}
+          className="bg-[#382C23] border border-[#D4A359]/20 p-8 sm:p-12 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-7"
+        >
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Nombre Completo
+            </label>
+            <input
+              type="text"
+              value={nombreCliente}
+              onChange={(e) => setNombreCliente(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="Ej. Julián Medina"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Teléfono / WhatsApp
+            </label>
+            <input
+              type="tel"
+              value={telefonoCliente}
+              onChange={(e) => setTelefonoCliente(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="300 123 4567"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Servicio
+            </label>
+            <select
+              value={servicioId}
+              onChange={(e) => setServicioId(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              required
+            >
+              <option value="" disabled>Selecciona un tratamiento</option>
+              {servicios.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.nombre} — ${Number(s.precio).toLocaleString()} ({s.duracion_minutos} min)
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Especialista
+            </label>
+            <select
+              value={barberoId}
+              onChange={(e) => setBarberoId(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              required
+            >
+              <option value="" disabled>Selecciona un especialista</option>
+              {barberos.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.nombre} {b.especialidad ? `(${b.especialidad})` : ""}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Fecha
+            </label>
+            <input
+              type="date"
+              value={fecha}
+              onChange={(e) => setFecha(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Hora
+            </label>
+            <input
+              type="time"
+              value={horaInicio}
+              onChange={(e) => setHoraInicio(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              required
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Preferencias o Notas (Opcional)
+            </label>
+            <input
+              type="text"
+              value={notas}
+              onChange={(e) => setNotas(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="Ej. Corte clásico con tijera, arreglo de barba, hidratación..."
+            />
+          </div>
+
+          {/* Botón sin recuadro que cambia de color al pasar el cursor y al oprimir */}
+          <div className="md:col-span-2 pt-4 text-center">
+            <button
+              type="submit"
+              className="btn-hairy-ghost text-base font-bold text-[#D4A359] hover:text-[#FFF1CE] active:text-[#A97832] pb-1.5 border-b border-[#D4A359] hover:border-[#FFF1CE]"
+            >
+              Confirmar Reserva →
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {/* Pie de página discreto con acceso oculto para personal */}
+      <footer className="border-t border-[#D4A359]/15 py-10 text-center text-xs text-[#A8988A]">
+        <p className="font-hairy-serif text-base tracking-[0.25em] text-[#D4A359] mb-2">
+          HAIRY · BARBERÍA &amp; SALÓN DE BELLEZA
+        </p>
+        <p>
+          Todos los derechos reservados{" "}
+          <span
+            onDoubleClick={() => navigate("/staff/login")}
+            className="cursor-default select-none"
+          >
+            © 2026
+          </span>
+        </p>
       </footer>
     </div>
   )
