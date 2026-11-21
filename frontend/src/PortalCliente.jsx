@@ -2,10 +2,14 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "./api"
 
+// Cambia esta ruta por el nombre de tu imagen en frontend/public/ o una URL directa
+const IMAGEN_FONDO = "
+
 function PortalCliente() {
   const [barberos, setBarberos] = useState([])
   const [servicios, setServicios] = useState([])
   const [errorCarga, setErrorCarga] = useState("")
+  const [menuAbierto, setMenuAbierto] = useState(false)
 
   const [nombreCliente, setNombreCliente] = useState("")
   const [telefonoCliente, setTelefonoCliente] = useState("")
@@ -34,6 +38,7 @@ function PortalCliente() {
   }, [])
 
   const irASeccion = (id) => {
+    setMenuAbierto(false)
     const el = document.getElementById(id)
     if (el) el.scrollIntoView({ behavior: "smooth" })
   }
@@ -57,7 +62,7 @@ function PortalCliente() {
       })
       setMensaje({
         tipo: "ok",
-        texto: "Tu cita en Hairy ha sido reservada con éxito. Te esperamos.",
+        texto: "Tu cita ha sido reservada con éxito. Te esperamos.",
       })
       setNombreCliente("")
       setTelefonoCliente("")
@@ -75,23 +80,24 @@ function PortalCliente() {
   }
 
   return (
-    <div id="inicio" className="min-h-screen bg-[#2F251E] text-[#F4EDE4] selection:bg-[#D4A359] selection:text-[#231B15]">
-      {/* Encabezado limpio estilo Hairy con botones sin recuadro */}
-      <header className="sticky top-0 z-50 bg-[#29201A]/90 backdrop-blur-md border-b border-[#D4A359]/20">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex items-center justify-between">
+    <div id="inicio" className="min-h-screen bg-[#0E0D0C] text-[#F4EDE4] selection:bg-[#D4A359] selection:text-[#0E0D0C]">
+      {/* Encabezado responsive con menú móvil */}
+      <header className="sticky top-0 z-50 bg-[#0E0D0C]/85 backdrop-blur-md border-b border-[#D4A359]/20">
+        <div className="max-w-6xl mx-auto px-5 sm:px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => irASeccion("inicio")}
             className="btn-hairy-ghost text-left group"
           >
-            <span className="block font-hairy-serif text-2xl sm:text-3xl font-bold tracking-[0.25em] text-[#F7F0E6] group-hover:text-[#D4A359] transition-colors">
-              MONARCA
+            <span className="block font-hairy-serif text-2xl sm:text-3xl font-bold tracking-[0.22em] text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
+              HAIRY
             </span>
-            <span className="block text-[9px] tracking-[0.35em] text-[#D4A359] mt-0.5">
+            <span className="block text-[9px] tracking-[0.32em] text-[#D4A359]">
               BARBERÍA &amp; SALÓN
             </span>
           </button>
 
-          <nav className="flex items-center gap-6 sm:gap-9 text-xs font-semibold">
+          {/* Navegación Desktop */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold">
             <button onClick={() => irASeccion("inicio")} className="btn-hairy-ghost">
               Inicio
             </button>
@@ -103,51 +109,99 @@ function PortalCliente() {
             </button>
             <button
               onClick={() => irASeccion("reservar")}
-              className="btn-hairy-ghost text-[#D4A359] hover:text-[#FCE2A6] active:text-[#B58338]"
+              className="btn-hairy-ghost text-[#D4A359] hover:text-[#FCE2A6]"
             >
               Reservar Cita
             </button>
           </nav>
+
+          {/* Botón Menú Móvil (sin recuadro) */}
+          <button
+            onClick={() => setMenuAbierto(!menuAbierto)}
+            aria-label="Abrir menú"
+            className="md:hidden btn-hairy-ghost text-[#D4A359] p-2"
+          >
+            {menuAbierto ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
+              </svg>
+            )}
+          </button>
         </div>
+
+        {/* Menú desplegable en Celular */}
+        {menuAbierto && (
+          <div className="md:hidden bg-[#141210]/95 border-t border-[#D4A359]/15 px-6 py-5 flex flex-col gap-4 text-xs font-semibold">
+            <button onClick={() => irASeccion("inicio")} className="btn-hairy-ghost text-left">
+              Inicio
+            </button>
+            <button onClick={() => irASeccion("servicios")} className="btn-hairy-ghost text-left">
+              Servicios
+            </button>
+            <button onClick={() => irASeccion("barberos")} className="btn-hairy-ghost text-left">
+              Especialistas
+            </button>
+            <button
+              onClick={() => irASeccion("reservar")}
+              className="btn-hairy-ghost text-left text-[#D4A359]"
+            >
+              Reservar Cita →
+            </button>
+          </div>
+        )}
       </header>
 
-      {/* Hero Editorial Hairy */}
-      <section className="relative py-24 sm:py-32 px-6 text-center bg-gradient-to-b from-[#3D3026] via-[#342921] to-[#2F251E] border-b border-[#D4A359]/15">
-        <div className="max-w-3xl mx-auto flex flex-col items-center">
-          {/* Ornamento dorado clásico */}
-          <div className="flex items-center gap-4 mb-6 text-[#D4A359]">
-            <span className="h-[1px] w-12 bg-[#D4A359]/50"></span>
-            <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+      {/* Hero con Imagen Personalizada + Degradado Negro */}
+      <section className="relative min-h-[82vh] sm:min-h-[88vh] flex items-center justify-center px-5 sm:px-6 py-20 text-center overflow-hidden border-b border-[#D4A359]/15">
+        {/* Capa 1: Tu imagen de fondo */}
+        <div
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
+          style={{ backgroundImage: `url('${IMAGEN_FONDO}')` }}
+        />
+
+        {/* Capa 2: Degradado negro cinematográfico (oscurece bordes y funde hacia abajo) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/65 to-[#0E0D0C]" />
+        <div className="absolute inset-0 bg-radial from-transparent via-black/40 to-black/85" />
+
+        {/* Contenido centrado sobre el degradado */}
+        <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
+          <div className="flex items-center gap-3 sm:gap-4 mb-5 text-[#D4A359]">
+            <span className="h-[1px] w-8 sm:w-12 bg-[#D4A359]/60"></span>
+            <svg className="w-6 h-6 sm:w-7 sm:h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <circle cx="6" cy="18" r="2.5" />
               <circle cx="18" cy="18" r="2.5" />
               <path d="M7.8 16.2L19 4M16.2 16.2L5 4" />
             </svg>
-            <span className="h-[1px] w-12 bg-[#D4A359]/50"></span>
+            <span className="h-[1px] w-8 sm:w-12 bg-[#D4A359]/60"></span>
           </div>
 
-          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.38em] mb-4">
-            Barbería  ;
+          <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.3em] sm:tracking-[0.38em] mb-3">
+            Barbería Clásica &amp; Salón de Belleza
           </p>
 
-          <h1 className="font-hairy-serif text-5xl sm:text-7xl font-bold text-[#FAF3EA] leading-tight">
+          <h1 className="font-hairy-serif text-4xl sm:text-6xl md:text-7xl font-bold text-[#FAF3EA] leading-tight">
             El Arte del <span className="italic text-[#D4A359]">Estilo</span> y el Cuidado
           </h1>
 
-          <p className="text-[#CFC2B4] text-sm sm:text-base mt-6 max-w-xl leading-relaxed">
+          <p className="text-[#D6CCC2] text-sm sm:text-base mt-5 max-w-xl leading-relaxed px-2">
             Cortes de precisión, ritual de barba tradicional y tratamientos capilares diseñados a tu medida. Agenda tu sesión sin filas ni esperas.
           </p>
 
-          {/* Botones sin recuadro en el hero */}
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-10">
+          {/* Botones sin recuadro */}
+          <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10">
             <button
               onClick={() => irASeccion("reservar")}
-              className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] active:text-[#A97832] pb-1 border-b border-[#D4A359]"
+              className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] pb-1 border-b border-[#D4A359]"
             >
               Agendar Turno →
             </button>
             <button
               onClick={() => irASeccion("servicios")}
-              className="btn-hairy-ghost text-sm font-semibold text-[#E6DDD3] hover:text-[#D4A359] active:text-[#A97832]"
+              className="btn-hairy-ghost text-xs sm:text-sm font-semibold text-[#EAE0D5] hover:text-[#D4A359]"
             >
               Explorar Carta de Servicios
             </button>
@@ -155,28 +209,28 @@ function PortalCliente() {
         </div>
       </section>
 
-      {/* Mensaje de error si falla conexión */}
+      {/* Aviso de error si falla conexión */}
       {errorCarga && (
-        <div className="max-w-4xl mx-auto mt-8 px-6">
-          <p className="text-center text-xs text-[#E8998D] bg-[#3E2620] border border-[#E8998D]/30 py-3 px-4 rounded-lg">
+        <div className="max-w-4xl mx-auto mt-8 px-5">
+          <p className="text-center text-xs text-[#E8998D] bg-[#241412] border border-[#E8998D]/30 py-3 px-4 rounded-lg">
             {errorCarga}
           </p>
         </div>
       )}
 
       {/* Carta de Servicios */}
-      <section id="servicios" className="max-w-5xl mx-auto px-6 py-24">
-        <div className="text-center mb-16">
-          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+      <section id="servicios" className="max-w-5xl mx-auto px-5 sm:px-6 py-16 sm:py-24">
+        <div className="text-center mb-12 sm:mb-16">
+          <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
             Carta de Tratamientos
           </p>
-          <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+          <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
             Servicios &amp; Tarifas
           </h2>
-          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-4"></div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-14 gap-y-6 sm:gap-y-8">
           {servicios.map((s) => (
             <div
               key={s.id}
@@ -184,22 +238,22 @@ function PortalCliente() {
                 setServicioId(String(s.id))
                 irASeccion("reservar")
               }}
-              className="group cursor-pointer pb-5 border-b border-[#D4A359]/20 hover:border-[#D4A359] transition-colors flex justify-between items-start gap-4"
+              className="group cursor-pointer pb-4 sm:pb-5 border-b border-[#D4A359]/20 hover:border-[#D4A359] transition-colors flex justify-between items-start gap-4"
             >
               <div>
-                <h3 className="font-hairy-serif text-2xl font-semibold text-[#F7F0E6] group-hover:text-[#D4A359] transition-colors">
+                <h3 className="font-hairy-serif text-xl sm:text-2xl font-semibold text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
                   {s.nombre}
                 </h3>
-                <p className="text-xs text-[#BFAEA0] mt-1.5 leading-relaxed">
+                <p className="text-xs text-[#B5ABA0] mt-1 leading-relaxed">
                   {s.descripcion || "Atención personalizada de barbería y salón"} ·{" "}
-                  <span className="text-[#D4A359]/90">{s.duracion_minutos} min</span>
+                  <span className="text-[#D4A359]">{s.duracion_minutos} min</span>
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <span className="font-hairy-serif text-2xl font-bold text-[#D4A359] block">
+                <span className="font-hairy-serif text-xl sm:text-2xl font-bold text-[#D4A359] block">
                   ${Number(s.precio).toLocaleString()}
                 </span>
-                <span className="btn-hairy-ghost text-[10px] text-[#BFAEA0] group-hover:text-[#F7F0E6]">
+                <span className="btn-hairy-ghost text-[10px] text-[#B5ABA0] group-hover:text-[#FAF3EA]">
                   Elegir
                 </span>
               </div>
@@ -209,19 +263,19 @@ function PortalCliente() {
       </section>
 
       {/* Equipo de Especialistas / Barberos */}
-      <section id="barberos" className="bg-[#382C23] border-y border-[#D4A359]/15 py-24 px-6">
+      <section id="barberos" className="bg-[#141311] border-y border-[#D4A359]/15 py-16 sm:py-24 px-5 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+          <div className="text-center mb-12 sm:mb-16">
+            <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
               Nuestros Profesionales
             </p>
-            <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+            <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
               Barberos &amp; Estilistas
             </h2>
-            <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+            <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-4"></div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-10">
             {barberos.map((b) => (
               <div
                 key={b.id}
@@ -229,18 +283,18 @@ function PortalCliente() {
                   setBarberoId(String(b.id))
                   irASeccion("reservar")
                 }}
-                className="group cursor-pointer bg-[#2F251E] p-8 rounded-2xl border border-[#D4A359]/15 hover:border-[#D4A359]/60 transition-all text-center"
+                className="group cursor-pointer bg-[#1A1816] p-7 sm:p-8 rounded-2xl border border-[#D4A359]/15 hover:border-[#D4A359]/60 transition-all text-center"
               >
-                <div className="w-20 h-20 mx-auto mb-5 rounded-full bg-[#3D3026] border border-[#D4A359]/40 flex items-center justify-center font-hairy-serif text-3xl font-bold text-[#D4A359] group-hover:border-[#D4A359] transition-colors">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-5 rounded-full bg-[#0E0D0C] border border-[#D4A359]/40 flex items-center justify-center font-hairy-serif text-2xl sm:text-3xl font-bold text-[#D4A359] group-hover:border-[#D4A359] transition-colors">
                   {b.nombre?.charAt(0)}
                 </div>
                 <h3 className="font-hairy-serif text-2xl font-bold text-[#FAF3EA] group-hover:text-[#D4A359] transition-colors">
                   {b.nombre}
                 </h3>
-                <p className="text-xs text-[#BFAEA0] uppercase tracking-[0.2em] mt-1.5">
+                <p className="text-xs text-[#B5ABA0] uppercase tracking-[0.2em] mt-1">
                   {b.especialidad || "Barbero & Estilista"}
                 </p>
-                <div className="mt-6">
+                <div className="mt-5">
                   <span className="btn-hairy-ghost text-xs font-semibold text-[#D4A359] group-hover:text-[#FFF1CE]">
                     Reservar con {b.nombre?.split(" ")[0]} →
                   </span>
@@ -251,24 +305,24 @@ function PortalCliente() {
         </div>
       </section>
 
-      {/* Formulario de Reserva */}
-      <section id="reservar" className="max-w-4xl mx-auto px-6 py-24">
-        <div className="text-center mb-12">
-          <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
+      {/* Formulario de Reserva Adaptable */}
+      <section id="reservar" className="max-w-4xl mx-auto px-5 sm:px-6 py-16 sm:py-24">
+        <div className="text-center mb-10 sm:mb-12">
+          <p className="text-[10px] sm:text-xs font-semibold text-[#D4A359] uppercase tracking-[0.35em]">
             Agenda en Línea
           </p>
-          <h2 className="font-hairy-serif text-4xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
+          <h2 className="font-hairy-serif text-3xl sm:text-5xl font-bold text-[#FAF3EA] mt-2">
             Reserva tu Sesión
           </h2>
-          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-5"></div>
+          <div className="w-16 h-[1px] bg-[#D4A359]/60 mx-auto mt-4"></div>
         </div>
 
         {mensaje.texto && (
           <div
             className={`mb-8 p-4 rounded-xl text-center text-sm font-medium border ${
               mensaje.tipo === "ok"
-                ? "bg-[#263528] border-[#76C882]/40 text-[#B4EEBC]"
-                : "bg-[#3E2520] border-[#E8998D]/40 text-[#F5BEB5]"
+                ? "bg-[#142417] border-[#76C882]/40 text-[#B4EEBC]"
+                : "bg-[#261412] border-[#E8998D]/40 text-[#F5BEB5]"
             }`}
           >
             {mensaje.texto}
@@ -277,44 +331,44 @@ function PortalCliente() {
 
         <form
           onSubmit={reservarTurno}
-          className="bg-[#382C23] border border-[#D4A359]/20 p-8 sm:p-12 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-7"
+          className="bg-[#161412] border border-[#D4A359]/20 p-6 sm:p-12 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-7"
         >
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Nombre Completo
             </label>
             <input
               type="text"
               value={nombreCliente}
               onChange={(e) => setNombreCliente(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               placeholder="Ej. Julián Medina"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Teléfono / WhatsApp
             </label>
             <input
               type="tel"
               value={telefonoCliente}
               onChange={(e) => setTelefonoCliente(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               placeholder="300 123 4567"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Servicio
             </label>
             <select
               value={servicioId}
               onChange={(e) => setServicioId(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             >
               <option value="" disabled>Selecciona un tratamiento</option>
@@ -327,13 +381,13 @@ function PortalCliente() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Especialista
             </label>
             <select
               value={barberoId}
               onChange={(e) => setBarberoId(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             >
               <option value="" disabled>Selecciona un especialista</option>
@@ -346,49 +400,48 @@ function PortalCliente() {
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Fecha
             </label>
             <input
               type="date"
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             />
           </div>
 
           <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Hora
             </label>
             <input
               type="time"
               value={horaInicio}
               onChange={(e) => setHoraInicio(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               required
             />
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+            <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Preferencias o Notas (Opcional)
             </label>
             <input
               type="text"
               value={notas}
               onChange={(e) => setNotas(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
-              placeholder="Ej. Corte clásico con tijera, arreglo de barba, hidratación..."
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="Ej. Corte clásico con tijera, arreglo de barba..."
             />
           </div>
 
-    
-          <div className="md:col-span-2 pt-4 text-center">
+          <div className="md:col-span-2 pt-3 text-center">
             <button
               type="submit"
-              className="btn-hairy-ghost text-base font-bold text-[#D4A359] hover:text-[#FFF1CE] active:text-[#A97832] pb-1.5 border-b border-[#D4A359] hover:border-[#FFF1CE]"
+              className="btn-hairy-ghost text-base font-bold text-[#D4A359] hover:text-[#FFF1CE] pb-1.5 border-b border-[#D4A359] hover:border-[#FFF1CE]"
             >
               Confirmar Reserva →
             </button>
@@ -396,13 +449,13 @@ function PortalCliente() {
         </form>
       </section>
 
-
-      <footer className="border-t border-[#D4A359]/15 py-10 text-center text-xs text-[#A8988A]">
+      {/* Pie de página */}
+      <footer className="border-t border-[#D4A359]/15 py-10 px-5 text-center text-xs text-[#9C9288]">
         <p className="font-hairy-serif text-base tracking-[0.25em] text-[#D4A359] mb-2">
-          Barbería Monarca &amp; Barberia
+          HAIRY · BARBERÍA &amp; SALÓN DE BELLEZA
         </p>
         <p>
-          Julian Medina y Julian Moreno{" "}
+          Todos los derechos reservados{" "}
           <span
             onDoubleClick={() => navigate("/staff/login")}
             className="cursor-default select-none"
