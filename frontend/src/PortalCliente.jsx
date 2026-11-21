@@ -2,8 +2,6 @@ import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "./api"
 
-// Si guardas tu foto en frontend/public/fondo-barberia.jpg la usará automáticamente;
-// si no existe o falla, cargará la imagen de respaldo de barbería clásica.
 const IMAGEN_LOCAL = `${import.meta.env.BASE_URL}fondo-barberia.jpg`
 const IMAGEN_RESPALDO = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1920&q=80"
 
