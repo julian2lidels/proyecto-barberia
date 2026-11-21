@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { api } from "./api"
 
 // Cambia esta ruta por el nombre de tu imagen en frontend/public/ o una URL directa
-const IMAGEN_FONDO = "
+const IMAGEN_FONDO = "/frontend/public/345fe1c9d8b16219936b049140ab26c1.jpg"
 
 function PortalCliente() {
   const [barberos, setBarberos] = useState([])

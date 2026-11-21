@@ -19,7 +19,7 @@ body {
   font-family: 'Cormorant Garamond', Georgia, serif;
 }
 
-/* Botones invisibles / sin recuadro que cambian de color al pasar el cursor o tocar en móvil */
+
 .btn-hairy-ghost {
   background: transparent;
   border: none;
