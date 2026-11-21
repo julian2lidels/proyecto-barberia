@@ -2,6 +2,15 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { api } from "./api"
 
+function extraerRolDeJWT(token) {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]))
+    return payload.rol || payload.role || null
+  } catch {
+    return null
+  }
+}
+
 function LoginStaff() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -18,17 +27,29 @@ function LoginStaff() {
         body: JSON.stringify({ username, password }),
       })
 
-      const sesion = data || JSON.parse(localStorage.getItem("barberia_sesion") || "{}")
-      if (data) {
-        localStorage.setItem("barberia_sesion", JSON.stringify(data))
+      const token = data?.token || data?.access_token || ""
+      const rol =
+        data?.rol ||
+        data?.usuario?.rol ||
+        (token ? extraerRolDeJWT(token) : null) ||
+        (username === "admin" ? "admin" : "barbero")
+
+      const sesionGuardada = {
+        ...data,
+        token,
+        rol,
+        username: data?.username || data?.usuario?.username || username,
       }
 
-      if (sesion?.rol === "admin") {
+      // Guardamos en todas las claves posibles para compatibilidad con RutaProtegida.jsx
+      localStorage.setItem("barberia_sesion", JSON.stringify(sesionGuardada))
+      localStorage.setItem("sesion", JSON.stringify(sesionGuardada))
+      if (token) localStorage.setItem("token", token)
+
+      if (rol === "admin") {
         navigate("/admin")
-      } else if (sesion?.rol) {
-        navigate("/panel-barbero")
       } else {
-        setError("No se pudo obtener el rol de la sesión.")
+        navigate("/panel-barbero")
       }
     } catch (err) {
       setError(err.message || "Usuario o contraseña incorrectos")
