@@ -1,57 +1,94 @@
 import { useState } from "react"
-import { Navigate, useNavigate } from "react-router-dom"
-import Navbar from "./components/Navbar"
-import { api, guardarSesion, obtenerSesion } from "./api"
+import { useNavigate } from "react-router-dom"
+import { api } from "./api"
 
 function LoginStaff() {
+  const [username, setUsername] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
   const navigate = useNavigate()
-  const [usuario, setusuario] = useState("")
-  const [password, setpassword] = useState("")
-  const [error, seterror] = useState("")
-  const [enviando, setenviando] = useState(false)
 
-  const sesionActual = obtenerSesion()
-  if (sesionActual && sesionActual.token) {
-    return <Navigate to={sesionActual.rol === "admin" ? "/admin" : "/panel-barbero"} replace />
-  }
-
-  const entrar = async (e) => {
+  const iniciarSesion = async (e) => {
     e.preventDefault()
-    seterror("")
-    setenviando(true)
+    setError("")
+
     try {
-      const datos = await api("/api/auth/login", { metodo: "POST", cuerpo: { usuario, password } })
-      guardarSesion(datos)
-      navigate(datos.rol === "admin" ? "/admin" : "/panel-barbero")
+      const data = await api("/login", {
+        method: "POST",
+        body: JSON.stringify({ username, password }),
+      })
+      localStorage.setItem("barberia_sesion", JSON.stringify(data))
+      if (data.rol === "admin") {
+        navigate("/admin")
+      } else {
+        navigate("/panel-barbero")
+      }
     } catch (err) {
-      seterror(err.message)
-    } finally {
-      setenviando(false)
+      setError(err.message || "Usuario o contraseña incorrectos")
     }
   }
 
   return (
-    <div className="min-h-screen">
-      <Navbar />
-      <div className="mx-auto mt-16 max-w-md px-6">
-        <div className="tarjeta">
-          <h1 className="mb-1 text-2xl font-extrabold text-white">Acceso del personal</h1>
-          <p className="mb-6 text-sm text-neutral-400">Ingresa con tu usuario de administrador o barbero.</p>
-          <form onSubmit={entrar} className="space-y-4">
-            <div>
-              <label className="etiqueta">Usuario</label>
-              <input className="campo" value={usuario} onChange={(e) => setusuario(e.target.value)} autoComplete="username" required />
-            </div>
-            <div>
-              <label className="etiqueta">Contraseña</label>
-              <input type="password" className="campo" value={password} onChange={(e) => setpassword(e.target.value)} autoComplete="current-password" required />
-            </div>
-            {error && <p className="text-sm text-red-400">{error}</p>}
-            <button type="submit" className="btn w-full" disabled={enviando}>
-              {enviando ? "Ingresando..." : "Ingresar"}
-            </button>
-          </form>
+    <div className="min-h-screen bg-[#2F251E] flex items-center justify-center px-6 text-[#F4EDE4]">
+      <div className="w-full max-w-md bg-[#382C23] border border-[#D4A359]/25 p-10 rounded-2xl shadow-2xl">
+        <div className="text-center mb-8">
+          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#F7F0E6]">HAIRY</p>
+          <p className="text-[10px] tracking-[0.35em] text-[#D4A359] uppercase mt-1">Acceso de Personal</p>
+          <div className="w-12 h-[1px] bg-[#D4A359]/50 mx-auto mt-4"></div>
         </div>
+
+        {error && (
+          <div className="mb-5 p-3 rounded-lg bg-[#3E2520] border border-[#E8998D]/40 text-[#F5BEB5] text-xs text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={iniciarSesion} className="space-y-6">
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Usuario
+            </label>
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="admin"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
+              Contraseña
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              placeholder="••••••••"
+              required
+            />
+          </div>
+
+          <div className="pt-2 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              className="btn-hairy-ghost text-xs text-[#BFAEA0] hover:text-[#F4EDE4]"
+            >
+              ← Volver al sitio
+            </button>
+
+            <button
+              type="submit"
+              className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] pb-1 border-b border-[#D4A359]"
+            >
+              Ingresar →
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

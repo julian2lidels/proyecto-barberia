@@ -1,31 +1,56 @@
-import { Link, useNavigate } from "react-router-dom"
-import { cerrarSesion, obtenerSesion } from "../api"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 
-function Navbar() {
+function Navbar({ subtitulo, tituloNormal, tituloDestacado }) {
+  const location = useLocation()
   const navigate = useNavigate()
-  const sesion = obtenerSesion()
-  const panel = sesion && sesion.rol === "admin" ? "/admin" : "/panel-barbero"
 
-  const salir = () => {
-    cerrarSesion()
-    navigate("/")
+  const enlaces = [
+    { ruta: "/admin", texto: "Panel" },
+    { ruta: "/admin/citas", texto: "Citas" },
+    { ruta: "/admin/barberos", texto: "Barberos & Usuarios" },
+    { ruta: "/admin/servicios", texto: "Servicios" },
+    { ruta: "/admin/clientes", texto: "Clientes" },
+  ]
+
+  const cerrarSesion = () => {
+    localStorage.removeItem("barberia_sesion")
+    navigate("/staff/login")
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/10 bg-neutral-950/80 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-        <Link to="/" className="flex items-center gap-2 text-lg font-extrabold tracking-wide text-white">
-          <span className="text-amber-400">✂</span> Barbería
-        </Link>
-        <div className="flex items-center gap-3">
-          {sesion && sesion.token ? (
-            <>
-              <Link to={panel} className="btn-suave">Mi panel</Link>
-              <button onClick={salir} className="btn-suave">Salir</button>
-            </>
-          ) : (
-            <Link to="/staff/login" className="btn-suave">Acceso personal</Link>
-          )}
+    <nav className="bg-[#29201A]/95 backdrop-blur-md border-b border-[#D4A359]/20 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex flex-wrap justify-between items-center gap-4">
+        <div>
+          <p className="text-[10px] text-[#D4A359] font-semibold tracking-[0.3em] uppercase">{subtitulo}</p>
+          <h1 className="font-hairy-serif text-2xl font-bold text-[#FAF3EA]">
+            {tituloNormal} <span className="italic text-[#D4A359]">{tituloDestacado}</span>
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-6 flex-wrap text-xs font-semibold">
+          {enlaces.map((item) => {
+            const activo = location.pathname === item.ruta
+            return (
+              <Link
+                key={item.ruta}
+                to={item.ruta}
+                className={`btn-hairy-ghost pb-1 ${
+                  activo
+                    ? "text-[#D4A359] border-b border-[#D4A359]"
+                    : "text-[#CFC2B4] hover:text-[#D4A359]"
+                }`}
+              >
+                {item.texto}
+              </Link>
+            )
+          })}
+
+          <button
+            onClick={cerrarSesion}
+            className="btn-hairy-ghost text-[#E8998D] hover:text-[#FFC4BA] ml-4"
+          >
+            Salir ✕
+          </button>
         </div>
       </div>
     </nav>
