@@ -126,7 +126,7 @@ function PortalCliente() {
           </div>
 
           <p className="text-xs font-semibold text-[#D4A359] uppercase tracking-[0.38em] mb-4">
-            Barbería Clásica &amp; Salón de Belleza
+            Barbería  &amp; Barberia de esilo
           </p>
 
           <h1 className="font-hairy-serif text-5xl sm:text-7xl font-bold text-[#FAF3EA] leading-tight">

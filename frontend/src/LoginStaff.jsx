@@ -32,7 +32,7 @@ function LoginStaff() {
     <div className="min-h-screen bg-[#2F251E] flex items-center justify-center px-6 text-[#F4EDE4]">
       <div className="w-full max-w-md bg-[#382C23] border border-[#D4A359]/25 p-10 rounded-2xl shadow-2xl">
         <div className="text-center mb-8">
-          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#F7F0E6]">HAIRY</p>
+          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#F7F0E6]">MONARCA</p>
           <p className="text-[10px] tracking-[0.35em] text-[#D4A359] uppercase mt-1">Acceso de Personal</p>
           <div className="w-12 h-[1px] bg-[#D4A359]/50 mx-auto mt-4"></div>
         </div>
