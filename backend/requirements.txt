@@ -1,5 +1,9 @@
-fastapi>=0.110,<1
-uvicorn>=0.29
-sqlalchemy>=2.0,<3
-mysql-connector-python>=8.4
-python-dotenv>=1.0
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-dotenv
+passlib[bcrypt]
+bcrypt==4.0.1
+pyjwt
+pydantic
