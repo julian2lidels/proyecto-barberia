@@ -402,7 +402,7 @@ function PortalCliente() {
           HAIRY · BARBERÍA &amp; SALÓN DE BELLEZA
         </p>
         <p>
-          Todos los derechos reservados{" "}
+          Julian Medina y Julian Moreno{" "}
           <span
             onDoubleClick={() => navigate("/staff/login")}
             className="cursor-default select-none"
