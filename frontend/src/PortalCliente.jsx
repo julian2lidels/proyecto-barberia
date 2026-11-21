@@ -399,7 +399,7 @@ function PortalCliente() {
       {/* Pie de página discreto con acceso oculto para personal */}
       <footer className="border-t border-[#D4A359]/15 py-10 text-center text-xs text-[#A8988A]">
         <p className="font-hairy-serif text-base tracking-[0.25em] text-[#D4A359] mb-2">
-          HAIRY · BARBERÍA &amp; SALÓN DE BELLEZA
+          Barbería Monarca &amp; Barberia
         </p>
         <p>
           Julian Medina y Julian Moreno{" "}
