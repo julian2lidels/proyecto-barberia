@@ -1,18 +1,4 @@
-# =====================================================================
-# Barbería -> Red Hat OpenShift
-# Stack: MySQL 8  +  FastAPI (backend/)  +  React + Nginx (frontend/)
-# Repo : https://github.com/julian2lidels/proyecto-barberia.git
-#
-# Uso:   oc apply -f openshift/barberia-openshift.yaml
-#   o en la consola web: perspectiva Developer -> boton (+) "Import YAML"
-#
-# ANTES de aplicar cambia las claves de los dos Secret (mysql-secret y app-secret).
-# Si tu rama no se llama "main", cambia "ref" en los dos BuildConfig.
-# No lleva namespace: se crea en el proyecto en el que estes parado.
-# El backend crea las tablas y los datos iniciales solo, al arrancar.
-# =====================================================================
 
-# ---------------------------- Credenciales ----------------------------
 apiVersion: v1
 kind: Secret
 metadata:

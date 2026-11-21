@@ -1,7 +1,4 @@
-# =====================================================================
-# 01 - Base de datos MySQL  (nodo propio en Topology: "mysql")
-#   oc apply -f 01-mysql.yaml
-# =====================================================================
+
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:

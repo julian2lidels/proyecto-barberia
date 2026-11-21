@@ -1,7 +1,4 @@
-# =====================================================================
-# 02 - Backend FastAPI  (nodo propio en Topology: "backend", flecha hacia mysql)
-#   oc apply -f 02-backend.yaml
-# =====================================================================
+
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:

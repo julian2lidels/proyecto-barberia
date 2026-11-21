@@ -1,7 +1,4 @@
-# =====================================================================
-# 03 - Frontend React + Nginx  (nodo propio en Topology: "frontend", flecha hacia backend)
-#   oc apply -f 03-frontend.yaml
-# =====================================================================
+
 apiVersion: image.openshift.io/v1
 kind: ImageStream
 metadata:
