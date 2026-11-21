@@ -17,11 +17,18 @@ function LoginStaff() {
         method: "POST",
         body: JSON.stringify({ username, password }),
       })
-      localStorage.setItem("barberia_sesion", JSON.stringify(data))
-      if (data.rol === "admin") {
+
+      const sesion = data || JSON.parse(localStorage.getItem("barberia_sesion") || "{}")
+      if (data) {
+        localStorage.setItem("barberia_sesion", JSON.stringify(data))
+      }
+
+      if (sesion?.rol === "admin") {
         navigate("/admin")
-      } else {
+      } else if (sesion?.rol) {
         navigate("/panel-barbero")
+      } else {
+        setError("No se pudo obtener el rol de la sesión.")
       }
     } catch (err) {
       setError(err.message || "Usuario o contraseña incorrectos")
@@ -29,16 +36,16 @@ function LoginStaff() {
   }
 
   return (
-    <div className="min-h-screen bg-[#2F251E] flex items-center justify-center px-6 text-[#F4EDE4]">
-      <div className="w-full max-w-md bg-[#382C23] border border-[#D4A359]/25 p-10 rounded-2xl shadow-2xl">
+    <div className="min-h-screen bg-[#0E0D0C] flex items-center justify-center px-6 text-[#F4EDE4]">
+      <div className="w-full max-w-md bg-[#161412] border border-[#D4A359]/25 p-10 rounded-2xl shadow-2xl">
         <div className="text-center mb-8">
-          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#F7F0E6]">MONARCA</p>
+          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#FAF3EA]">MONARCA</p>
           <p className="text-[10px] tracking-[0.35em] text-[#D4A359] uppercase mt-1">Acceso de Personal</p>
           <div className="w-12 h-[1px] bg-[#D4A359]/50 mx-auto mt-4"></div>
         </div>
 
         {error && (
-          <div className="mb-5 p-3 rounded-lg bg-[#3E2520] border border-[#E8998D]/40 text-[#F5BEB5] text-xs text-center">
+          <div className="mb-5 p-3 rounded-lg bg-[#261412] border border-[#E8998D]/40 text-[#F5BEB5] text-xs text-center">
             {error}
           </div>
         )}
@@ -52,7 +59,7 @@ function LoginStaff() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               placeholder="admin"
               required
             />
@@ -66,7 +73,7 @@ function LoginStaff() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#29201A] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
               placeholder="••••••••"
               required
             />
@@ -76,7 +83,7 @@ function LoginStaff() {
             <button
               type="button"
               onClick={() => navigate("/")}
-              className="btn-hairy-ghost text-xs text-[#BFAEA0] hover:text-[#F4EDE4]"
+              className="btn-hairy-ghost text-xs text-[#B5ABA0] hover:text-[#FAF3EA]"
             >
               ← Volver al sitio
             </button>
