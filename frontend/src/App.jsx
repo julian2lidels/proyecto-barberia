@@ -4,6 +4,10 @@ import LoginStaff from "./LoginStaff"
 import PanelAdmin from "./PanelAdmin"
 import PanelBarbero from "./PanelBarbero"
 import RutaProtegida from "./RutaProtegida"
+import Barberos from "./pages/Barberos"
+import Citas from "./pages/Citas"
+import Servicios from "./pages/Servicios"
+import Clientes from "./pages/Clientes"
 
 function App() {
   return (
@@ -11,6 +15,7 @@ function App() {
       <Routes>
         <Route path="/" element={<PortalCliente />} />
         <Route path="/staff/login" element={<LoginStaff />} />
+
         <Route
           path="/admin"
           element={
@@ -19,6 +24,39 @@ function App() {
             </RutaProtegida>
           }
         />
+        <Route
+          path="/admin/barberos"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <Barberos />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/admin/citas"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <Citas />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/admin/servicios"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <Servicios />
+            </RutaProtegida>
+          }
+        />
+        <Route
+          path="/admin/clientes"
+          element={
+            <RutaProtegida rolPermitido="admin">
+              <Clientes />
+            </RutaProtegida>
+          }
+        />
+
         <Route
           path="/panel-barbero"
           element={
