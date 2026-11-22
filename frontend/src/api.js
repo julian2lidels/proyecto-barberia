@@ -27,6 +27,12 @@ export async function api(endpoint, options = {}) {
     throw new Error(mensaje)
   }
 
+
+  const contentType = response.headers.get("content-type") || ""
+  if (!contentType.includes("application/json")) {
+    throw new Error("La API no respondió JSON. Revisa la URL del login (/api/auth/login).")
+  }
+
   if (response.status === 204) return null
   return response.json()
 }
