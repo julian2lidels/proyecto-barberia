@@ -1,6 +1,5 @@
 function extraerRolDeJWT(token) {
-  // El backend genera tokens de 2 partes: base64(payload).firma
-  // (no es un JWT estándar de 3 partes)
+
   try {
     const partes = token.split(".")
     const payloadB64 = partes.length >= 2 ? partes[0] : partes[0]
@@ -13,15 +12,13 @@ function extraerRolDeJWT(token) {
   }
 }
 
-// ... dentro de iniciarSesion:
-
 const data = await api("/auth/login", {
   method: "POST",
   body: JSON.stringify({ usuario: username, password }),
 })
 
 const token = data?.token || data?.access_token || ""
-// El backend ya devuelve "rol" en la respuesta. El token es de 2 partes (no JWT estándar).
+
 const rol =
   data?.rol ||
   data?.usuario?.rol ||
