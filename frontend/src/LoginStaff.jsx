@@ -1,125 +1,37 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { api } from "./api"
-
 function extraerRolDeJWT(token) {
+  // El backend genera tokens de 2 partes: base64(payload).firma
+  // (no es un JWT estándar de 3 partes)
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]))
+    const partes = token.split(".")
+    const payloadB64 = partes.length >= 2 ? partes[0] : partes[0]
+    // Añadir padding si hace falta para atob
+    const padded = payloadB64 + "=".repeat((4 - (payloadB64.length % 4)) % 4)
+    const payload = JSON.parse(atob(padded))
     return payload.rol || payload.role || null
   } catch {
     return null
   }
 }
 
-function LoginStaff() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
-  const [error, setError] = useState("")
-  const navigate = useNavigate()
+// ... dentro de iniciarSesion:
 
-  const iniciarSesion = async (e) => {
-    e.preventDefault()
-    setError("")
+const data = await api("/auth/login", {
+  method: "POST",
+  body: JSON.stringify({ usuario: username, password }),
+})
 
-    try {
-      const data = await api("/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
-      })
+const token = data?.token || data?.access_token || ""
+// El backend ya devuelve "rol" en la respuesta. El token es de 2 partes (no JWT estándar).
+const rol =
+  data?.rol ||
+  data?.usuario?.rol ||
+  (token ? extraerRolDeJWT(token) : null) ||
+  (username === "admin" ? "admin" : "barbero")
 
-      const token = data?.token || data?.access_token || ""
-      const rol =
-        data?.rol ||
-        data?.usuario?.rol ||
-        (token ? extraerRolDeJWT(token) : null) ||
-        (username === "admin" ? "admin" : "barbero")
-
-      const sesionGuardada = {
-        ...data,
-        token,
-        rol,
-        username: data?.username || data?.usuario?.username || username,
-      }
-
-      // Guardamos en todas las claves posibles para compatibilidad con RutaProtegida.jsx
-      localStorage.setItem("barberia_sesion", JSON.stringify(sesionGuardada))
-      localStorage.setItem("sesion", JSON.stringify(sesionGuardada))
-      if (token) localStorage.setItem("token", token)
-
-      if (rol === "admin") {
-        navigate("/admin")
-      } else {
-        navigate("/panel-barbero")
-      }
-    } catch (err) {
-      setError(err.message || "Usuario o contraseña incorrectos")
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-[#0E0D0C] flex items-center justify-center px-6 text-[#F4EDE4]">
-      <div className="w-full max-w-md bg-[#161412] border border-[#D4A359]/25 p-10 rounded-2xl shadow-2xl">
-        <div className="text-center mb-8">
-          <p className="font-hairy-serif text-3xl font-bold tracking-[0.25em] text-[#FAF3EA]">MONARCA</p>
-          <p className="text-[10px] tracking-[0.35em] text-[#D4A359] uppercase mt-1">Acceso de Personal</p>
-          <div className="w-12 h-[1px] bg-[#D4A359]/50 mx-auto mt-4"></div>
-        </div>
-
-        {error && (
-          <div className="mb-5 p-3 rounded-lg bg-[#261412] border border-[#E8998D]/40 text-[#F5BEB5] text-xs text-center">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={iniciarSesion} className="space-y-6">
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
-              Usuario
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
-              placeholder="admin"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
-              Contraseña
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <div className="pt-2 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => navigate("/")}
-              className="btn-hairy-ghost text-xs text-[#B5ABA0] hover:text-[#FAF3EA]"
-            >
-              ← Volver al sitio
-            </button>
-
-            <button
-              type="submit"
-              className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] pb-1 border-b border-[#D4A359]"
-            >
-              Ingresar →
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
+const sesionGuardada = {
+  ...data,
+  token,
+  rol,
+  username: data?.usuario || data?.username || username,
+  nombre: data?.nombre || (username === "admin" ? "Administrador" : username),
 }
-
-export default LoginStaff
