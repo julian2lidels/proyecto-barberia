@@ -1,4 +1,4 @@
-const API_BASE = "/api"
+const API_BASE = "/api/barberia"
 
 export async function api(endpoint, options = {}) {
   const sesion = JSON.parse(localStorage.getItem("barberia_sesion") || "{}")
@@ -18,29 +18,22 @@ export async function api(endpoint, options = {}) {
 
   if (!response.ok) {
     const errData = await response.json().catch(() => ({}))
-    const mensaje =
-      typeof errData.detail === "string"
-        ? errData.detail
-        : Array.isArray(errData.detail)
-          ? errData.detail.map((e) => e.msg || JSON.stringify(e)).join(", ")
-          : `Error ${response.status}`
-    throw new Error(mensaje)
-  }
-
-
-  const contentType = response.headers.get("content-type") || ""
-  if (!contentType.includes("application/json")) {
-    throw new Error("La API no respondió JSON. Revisa la URL del login (/api/auth/login).")
+    throw new Error(errData.detail || `Error ${response.status}`)
   }
 
   if (response.status === 204) return null
   return response.json()
 }
 
-export function obtenerSesion() {
-  try {
-    return JSON.parse(localStorage.getItem("barberia_sesion") || "null")
-  } catch {
-    return null
-  }
+export function hora(valor) {
+  if (!valor) return ""
+  return String(valor).slice(0, 5)
+}
+
+export function hoyISO() {
+  return new Date().toISOString().split("T")[0]
+}
+
+export function precio(valor) {
+  return `$${Number(valor || 0).toLocaleString("es-CO")}`
 }
