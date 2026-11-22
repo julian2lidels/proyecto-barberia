@@ -8,6 +8,7 @@ import Barberos from "./pages/Barberos"
 import Citas from "./pages/Citas"
 import Servicios from "./pages/Servicios"
 import Clientes from "./pages/Clientes"
+import Layout from "./components/Layout"
 
 function App() {
   return (
@@ -36,7 +37,9 @@ function App() {
           path="/admin/citas"
           element={
             <RutaProtegida rolPermitido="admin">
-              <Citas />
+              <Layout subtitulo="Agenda" tituloNormal="Todas las" tituloDestacado="Citas">
+                <Citas />
+              </Layout>
             </RutaProtegida>
           }
         />

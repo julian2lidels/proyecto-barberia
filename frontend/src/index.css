@@ -42,3 +42,21 @@ body {
   color: #F7D388;
   transform: scale(0.96);
 }
+
+@layer components {
+  .tarjeta {
+    @apply rounded-2xl border border-[#D4A359]/20 bg-[#382C23] p-6;
+  }
+  .etiqueta {
+    @apply mb-2 block text-[11px] font-semibold uppercase tracking-widest text-[#D4A359];
+  }
+  .campo {
+    @apply w-full rounded-lg border border-[#D4A359]/25 bg-[#29201A] p-3 text-sm text-[#F4EDE4] focus:border-[#D4A359] focus:outline-none;
+  }
+  .btn {
+    @apply rounded-lg bg-[#D4A359] px-5 py-3 text-xs font-bold uppercase tracking-widest text-[#0E0D0C] transition-colors hover:bg-[#F7D388];
+  }
+  .btn-suave {
+    @apply rounded-lg border border-[#D4A359]/40 px-4 py-2 text-xs font-semibold uppercase tracking-widest text-[#D4A359] transition-colors hover:bg-[#D4A359]/10;
+  }
+}

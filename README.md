@@ -73,6 +73,7 @@ Problemas frecuentes:
 - Build en error: `oc logs build/backend-1` o `oc logs build/frontend-1`.
 - Repo privado: agrega un Source Secret con tu token de GitHub al `source` de los BuildConfig.
 - Tras subir cambios a GitHub: `oc start-build backend` / `oc start-build frontend`.
+- Si cambias `ADMIN_PASSWORD` en el Secret: `oc apply -f openshift/00-secretos.yaml` y `oc rollout restart deployment/backend` (el backend actualiza la clave del admin al arrancar).
 - El backend queda sin responder unos segundos al inicio mientras espera a MySQL; es normal.
 
 ## Variables del backend

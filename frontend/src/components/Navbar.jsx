@@ -1,19 +1,23 @@
 import { Link, useLocation, useNavigate } from "react-router-dom"
+import { cerrarSesion, obtenerSesion } from "../api"
+
+const ENLACES_ADMIN = [
+  { ruta: "/admin", texto: "Panel" },
+  { ruta: "/admin/citas", texto: "Citas" },
+  { ruta: "/admin/barberos", texto: "Barberos & Usuarios" },
+  { ruta: "/admin/servicios", texto: "Servicios" },
+  { ruta: "/admin/clientes", texto: "Clientes" },
+]
 
 function Navbar({ subtitulo, tituloNormal, tituloDestacado }) {
   const location = useLocation()
   const navigate = useNavigate()
+  const sesion = obtenerSesion()
+  // El barbero solo ve su panel; los enlaces de administración son solo para el admin
+  const enlaces = sesion?.rol === "admin" ? ENLACES_ADMIN : []
 
-  const enlaces = [
-    { ruta: "/admin", texto: "Panel" },
-    { ruta: "/admin/citas", texto: "Citas" },
-    { ruta: "/admin/barberos", texto: "Barberos & Usuarios" },
-    { ruta: "/admin/servicios", texto: "Servicios" },
-    { ruta: "/admin/clientes", texto: "Clientes" },
-  ]
-
-  const cerrarSesion = () => {
-    localStorage.removeItem("barberia_sesion")
+  const salir = () => {
+    cerrarSesion()
     navigate("/staff/login")
   }
 
@@ -45,10 +49,7 @@ function Navbar({ subtitulo, tituloNormal, tituloDestacado }) {
             )
           })}
 
-          <button
-            onClick={cerrarSesion}
-            className="btn-hairy-ghost text-[#E8998D] hover:text-[#FFC4BA] ml-4"
-          >
+          <button onClick={salir} className="btn-hairy-ghost text-[#E8998D] hover:text-[#FFC4BA] ml-4">
             Salir ✕
           </button>
         </div>

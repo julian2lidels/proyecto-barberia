@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from src.config.database import Base, SessionLocal, engine
 from src.config.settings import ADMIN_PASSWORD, ADMIN_USER
 from src.models import Barbero, Servicio, Usuario
-from src.security import hash_password
+from src.security import hash_password, verify_password
 
 SERVICIOS_INICIALES = [
     ("Corte clásico", "Corte a tijera o máquina con acabado a navaja", 25000, 30),
@@ -38,8 +38,15 @@ def esperar_base_de_datos(intentos: int = 30, pausa: int = 2) -> None:
 
 
 def sembrar(db: Session) -> None:
-    if not db.query(Usuario).filter(Usuario.rol == "admin").first():
+    # El administrador siempre coincide con ADMIN_USER / ADMIN_PASSWORD (Secret en OpenShift):
+    # si cambias la clave en el Secret y reinicias el backend, la nueva clave queda activa.
+    admin = db.query(Usuario).filter(Usuario.usuario == ADMIN_USER).first()
+    if not admin:
         db.add(Usuario(usuario=ADMIN_USER, password_hash=hash_password(ADMIN_PASSWORD), rol="admin"))
+    else:
+        admin.rol = "admin"
+        if not verify_password(ADMIN_PASSWORD, admin.password_hash):
+            admin.password_hash = hash_password(ADMIN_PASSWORD)
     if db.query(Servicio).count() == 0:
         for nombre, descripcion, precio, duracion in SERVICIOS_INICIALES:
             db.add(Servicio(nombre=nombre, descripcion=descripcion, precio=precio, duracion_min=duracion))

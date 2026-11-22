@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
-import { api } from "./api"
+import { api, hoyISO } from "./api"
 
 const IMAGEN_LOCAL = `${import.meta.env.BASE_URL}fondo-barberia.jpg`
 const IMAGEN_RESPALDO = "https://images.unsplash.com/photo-1585747860715-2ba37e788b70?auto=format&fit=crop&w=1920&q=80"
@@ -18,6 +18,7 @@ function PortalCliente() {
   const [servicioId, setServicioId] = useState("")
   const [fecha, setFecha] = useState("")
   const [horaInicio, setHoraInicio] = useState("")
+  const [horarios, setHorarios] = useState([])
   const [notas, setNotas] = useState("")
   const [mensaje, setMensaje] = useState({ tipo: "", texto: "" })
 
@@ -32,8 +33,8 @@ function PortalCliente() {
 
   useEffect(() => {
     Promise.all([
-      api("/publico/barberos"),
-      api("/publico/servicios"),
+      api("/api/barberos"),
+      api("/api/servicios"),
     ])
       .then(([dataBarberos, dataServicios]) => {
         setBarberos(dataBarberos || [])
@@ -44,6 +45,18 @@ function PortalCliente() {
         setErrorCarga(err.message || "No se pudo cargar el catálogo en este momento.")
       })
   }, [])
+
+  // Horas libres del barbero para el servicio y la fecha elegidos
+  useEffect(() => {
+    setHoraInicio("")
+    if (!barberoId || !servicioId || !fecha) {
+      setHorarios([])
+      return
+    }
+    api(`/api/disponibilidad?id_barbero=${barberoId}&id_servicio=${servicioId}&fecha=${fecha}`)
+      .then((d) => setHorarios(d.horarios || []))
+      .catch(() => setHorarios([]))
+  }, [barberoId, servicioId, fecha])
 
   const irASeccion = (id) => {
     setMenuAbierto(false)
@@ -56,17 +69,16 @@ function PortalCliente() {
     setMensaje({ tipo: "", texto: "" })
 
     try {
-      await api("/publico/reservar", {
-        method: "POST",
-        body: JSON.stringify({
-          nombre_cliente: nombreCliente,
-          telefono_cliente: telefonoCliente,
-          barbero_id: parseInt(barberoId, 10),
-          servicio_id: parseInt(servicioId, 10),
-          fecha,
-          hora_inicio: horaInicio,
-          notas,
-        }),
+      await api("/api/citas", {
+        metodo: "POST",
+        cuerpo: {
+          nombre: nombreCliente,
+          telefono: telefonoCliente,
+          id_barbero: parseInt(barberoId, 10),
+          id_servicio: parseInt(servicioId, 10),
+          inicio: `${fecha}T${horaInicio}:00`,
+          notas: notas || null,
+        },
       })
       setMensaje({
         tipo: "ok",
@@ -78,6 +90,7 @@ function PortalCliente() {
       setServicioId("")
       setFecha("")
       setHoraInicio("")
+      setHorarios([])
       setNotas("")
     } catch (err) {
       setMensaje({
@@ -253,7 +266,7 @@ function PortalCliente() {
                 </h3>
                 <p className="text-xs text-[#B5ABA0] mt-1 leading-relaxed">
                   {s.descripcion || "Servicio profesional de barbería"} ·{" "}
-                  <span className="text-[#D4A359]">{s.duracion_minutos} min</span>
+                  <span className="text-[#D4A359]">{s.duracion_min} min</span>
                 </p>
               </div>
               <div className="text-right shrink-0">
@@ -381,7 +394,7 @@ function PortalCliente() {
               <option value="" disabled>Selecciona un servicio</option>
               {servicios.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.nombre} — ${Number(s.precio).toLocaleString()} ({s.duracion_minutos} min)
+                  {s.nombre} — ${Number(s.precio).toLocaleString()} ({s.duracion_min} min)
                 </option>
               ))}
             </select>
@@ -412,6 +425,7 @@ function PortalCliente() {
             </label>
             <input
               type="date"
+              min={hoyISO()}
               value={fecha}
               onChange={(e) => setFecha(e.target.value)}
               className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
@@ -423,13 +437,24 @@ function PortalCliente() {
             <label className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-[#D4A359] mb-2">
               Hora
             </label>
-            <input
-              type="time"
+            <select
               value={horaInicio}
               onChange={(e) => setHoraInicio(e.target.value)}
-              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359]"
+              className="w-full bg-[#0E0D0C] border border-[#D4A359]/25 text-[#F4EDE4] text-base sm:text-sm rounded-lg p-3.5 focus:outline-none focus:border-[#D4A359] disabled:opacity-50"
+              disabled={horarios.length === 0}
               required
-            />
+            >
+              <option value="" disabled>
+                {!barberoId || !servicioId || !fecha
+                  ? "Elige servicio, barbero y fecha"
+                  : horarios.length === 0
+                    ? "Sin horas libres ese día"
+                    : "Selecciona una hora"}
+              </option>
+              {horarios.map((h) => (
+                <option key={h} value={h}>{h}</option>
+              ))}
+            </select>
           </div>
 
           <div className="md:col-span-2">

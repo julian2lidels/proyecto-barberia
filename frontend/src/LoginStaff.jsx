@@ -1,57 +1,36 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { api } from "./api"
-
-function extraerRolDeJWT(token) {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]))
-    return payload.rol || payload.role || null
-  } catch {
-    return null
-  }
-}
+import { api, guardarSesion } from "./api"
 
 function LoginStaff() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [cargando, setCargando] = useState(false)
   const navigate = useNavigate()
 
   const iniciarSesion = async (e) => {
     e.preventDefault()
     setError("")
+    setCargando(true)
 
     try {
-      const data = await api("/login", {
-        method: "POST",
-        body: JSON.stringify({ username, password }),
+      // El backend espera { usuario, password } en /api/auth/login
+      const data = await api("/api/auth/login", {
+        metodo: "POST",
+        cuerpo: { usuario: username.trim(), password },
       })
 
-      const token = data?.token || data?.access_token || ""
-      const rol =
-        data?.rol ||
-        data?.usuario?.rol ||
-        (token ? extraerRolDeJWT(token) : null) ||
-        (username === "admin" ? "admin" : "barbero")
-
-      const sesionGuardada = {
-        ...data,
-        token,
-        rol,
-        username: data?.username || data?.usuario?.username || username,
+      if (!data?.token || !data?.rol) {
+        throw new Error("No se pudo obtener el rol de la sesión.")
       }
 
-      localStorage.setItem("barberia_sesion", JSON.stringify(sesionGuardada))
-      localStorage.setItem("sesion", JSON.stringify(sesionGuardada))
-      if (token) localStorage.setItem("token", token)
-
-      if (rol === "admin") {
-        navigate("/admin")
-      } else {
-        navigate("/panel-barbero")
-      }
+      guardarSesion(data)
+      navigate(data.rol === "admin" ? "/admin" : "/panel-barbero")
     } catch (err) {
       setError(err.message || "Usuario o contraseña incorrectos")
+    } finally {
+      setCargando(false)
     }
   }
 
@@ -110,9 +89,10 @@ function LoginStaff() {
 
             <button
               type="submit"
+              disabled={cargando}
               className="btn-hairy-ghost text-sm font-bold text-[#D4A359] hover:text-[#FFF1CE] pb-1 border-b border-[#D4A359]"
             >
-              Ingresar →
+              {cargando ? "Ingresando..." : "Ingresar →"}
             </button>
           </div>
         </form>

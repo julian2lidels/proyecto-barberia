@@ -1,7 +1,8 @@
 import { Navigate } from "react-router-dom"
+import { obtenerSesion } from "./api"
 
 function RutaProtegida({ children, rolPermitido }) {
-  const sesion = JSON.parse(localStorage.getItem("barberia_sesion") || "null")
+  const sesion = obtenerSesion()
 
   if (!sesion || !sesion.rol) {
     return <Navigate to="/staff/login" replace />
