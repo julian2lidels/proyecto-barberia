@@ -43,7 +43,7 @@ function PanelAdmin() {
       <div className="flex justify-between items-center mb-6">
         <h2 className="font-hairy-serif text-3xl font-bold text-[#FAF3EA]">Agenda del día ({hoy})</h2>
         <Link to="/admin/citas" className="btn-hairy-ghost text-xs font-bold text-[#D4A359] hover:text-[#FFF1CE]">
-          Ver todas las citas →
+          Ver todas las citas 
         </Link>
       </div>
 

@@ -24,7 +24,6 @@ function PortalCliente() {
 
   const navigate = useNavigate()
 
-  // Verifica si la imagen local existe; si no, aplica la de respaldo
   useEffect(() => {
     const img = new Image()
     img.src = IMAGEN_LOCAL
